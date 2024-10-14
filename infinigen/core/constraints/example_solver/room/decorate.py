@@ -104,7 +104,6 @@ def split_rooms(rooms_meshed: list[bpy.types.Object]):
 
 
 def room_walls(wall_objs: list[bpy.types.Object]):
-   
     wall_fns = list(rg(ROOM_WALLS[get_room_type(r.name)]) for r in wall_objs)
     logger.debug(
         f"{room_walls.__name__} adding materials to {len(wall_objs)=}, using {len(wall_fns)=}"

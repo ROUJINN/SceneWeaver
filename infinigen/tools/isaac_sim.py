@@ -4,12 +4,12 @@
 # Authors: David Yan, Beining Han
 
 # Acknowledgement: This file draws inspiration from https://docs.omniverse.nvidia.com/isaacsim/latest/index.html
-import sys
 # sys.path.append("/home/yandan/.local/share/ov/pkg/isaac-sim-2023.1.1/exts/omni.isaac.core/")
 # sys.path.append("/home/yandan/.local/share/ov/pkg/isaac-sim-2023.1.1/kit/kernel/py/")
 # sys.path.append("/home/yandan/.local/share/ov/pkg/isaac-sim-2023.1.1/kit/exts/omni.usd")
 # import tongverse as tv
 import json
+import sys
 
 import numpy as np
 import omni
@@ -31,6 +31,7 @@ from omni.physx.scripts import utils
 
 CONFIG = {"renderer": "RayTracedLighting", "headless": False}
 simulation_app = SimulationApp(launch_config=CONFIG)
+
 
 class RobotController(BaseController):
     def __init__(self):
@@ -67,7 +68,7 @@ class InfinigenIsaacScene(object):
         stage = omni.usd.get_context().get_stage()
 
         prims = [prim for prim in stage.Traverse() if prim.IsA(UsdGeom.Mesh)]
-        
+
         if self.cfg.json_path is None:
             for prim in prims:
                 utils.setStaticCollider(prim)

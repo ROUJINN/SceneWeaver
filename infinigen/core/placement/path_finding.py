@@ -4,12 +4,11 @@
 # Authors: Zeyu Ma
 
 import itertools
+import pdb
 
 import mathutils
 import networkx as nx
 import numpy as np
-import pdb
-
 from scipy.sparse import csr_matrix
 
 

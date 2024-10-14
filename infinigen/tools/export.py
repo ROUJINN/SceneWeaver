@@ -101,7 +101,6 @@ def handle_geo_modifiers(obj, export_usd):
         realizeInstances(obj)
 
 
-
 def split_glass_mats():
     split_objs = []
     for obj in bpy.data.objects:

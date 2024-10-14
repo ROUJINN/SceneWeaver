@@ -13,6 +13,7 @@ import gin
 import numpy as np
 from tqdm import trange
 
+from debug import invisible_others, visible_others
 from infinigen.core.constraints import constraint_language as cl
 from infinigen.core.constraints import reasoning as r
 from infinigen.core.constraints.evaluator import domain_contains
@@ -26,8 +27,6 @@ from infinigen.core.util import blender as butil
 
 from .annealing import SimulatedAnnealingSolver
 from .room import MultistoryRoomSolver, RoomSolver
-
-from debug import invisible_others, visible_others
 
 logger = logging.getLogger(__name__)
 
@@ -119,7 +118,7 @@ class Solver:
             "translate": (propose_continous.propose_translate, 1),
             "rotate": (propose_continous.propose_rotate, 0.5),
         }
-        
+
         if restrict_moves is not None:
             schedules = {k: v for k, v in schedules.items() if k in restrict_moves}
             logger.info(
@@ -157,12 +156,11 @@ class Solver:
         abort_unsatisfied: bool = False,
         print_bounds: bool = False,
     ):
-
         filter_domain = copy.deepcopy(filter_domain)
-            
-        desc_full = (desc, *var_assignments.values()) #('on_floor_0', 'bedroom_0-0')
 
-        dom_assignments = {   #{Variable(room): Domain({Semantics.Room, Semantics.Bedroom, SpecificObject(name='bedroom_0-0')}, [])}
+        desc_full = (desc, *var_assignments.values())  # ('on_floor_0', 'bedroom_0-0')
+
+        dom_assignments = {  # {Variable(room): Domain({Semantics.Room, Semantics.Bedroom, SpecificObject(name='bedroom_0-0')}, [])}
             k: r.Domain(self.state.objs[objkey].tags)
             for k, objkey in var_assignments.items()
         }
@@ -182,20 +180,22 @@ class Solver:
             logger.info(f"No objects to be added for {desc_full=}, skipping")
             return self.state
 
-        active_count = greedy.update_active_flags(self.state, var_assignments)  #5
+        active_count = greedy.update_active_flags(self.state, var_assignments)  # 5
 
         n_start = len(self.state.objs)
         logger.info(
             f"Greedily solve {desc_full} - stage has {len(bounds)}/{len(orig_bounds)} bounds, "
             f"{active_count=}/{len(self.state.objs)} objs"
-        ) #[15:25:10.504] [solve] [INFO] | Greedily solve ('on_floor_0', 'bedroom_0-0') - stage has 7/63 bounds, active_count=5/25 objs
+        )  # [15:25:10.504] [solve] [INFO] | Greedily solve ('on_floor_0', 'bedroom_0-0') - stage has 7/63 bounds, active_count=5/25 objs
 
         self.optim.reset(max_iters=n_steps)
-        ra = trange(n_steps) if self.optim.print_report_freq == 0 else range(n_steps)  #range(0, 150)
-       
+        ra = (
+            trange(n_steps) if self.optim.print_report_freq == 0 else range(n_steps)
+        )  # range(0, 150)
+
         for j in ra:
             move_gen = self.choose_move_type(j, n_steps)
-            self.optim.step(consgraph, self.state, move_gen, filter_domain)  #MARK
+            self.optim.step(consgraph, self.state, move_gen, filter_domain)  # MARK
         self.optim.save_stats(self.output_folder / f"optim_{desc}.csv")
 
         logger.info(
@@ -227,4 +227,3 @@ class Solver:
     def get_bpy_objects(self, domain: r.Domain) -> list[bpy.types.Object]:
         objkeys = domain_contains.objkeys_in_dom(domain, self.state)
         return [self.state.objs[k].obj for k in objkeys]
-

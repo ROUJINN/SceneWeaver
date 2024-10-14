@@ -235,7 +235,7 @@ class KitchenCabinetBaseFactory(AssetFactory):
                         self.frame_params["bottom_board_height"],
                     ),
                 ]
-                
+
                 params["door_open_angle"] = 0
 
             params["door_height"] = (
@@ -289,7 +289,7 @@ class KitchenCabinetBaseFactory(AssetFactory):
         self.material_params = self.get_material_params()
 
         components = []
-        
+
         for k, w in enumerate(self.cabinet_widths):
             # create frame
             frame_params = self.get_frame_params(w, i=i)
@@ -341,7 +341,7 @@ class KitchenCabinetBaseFactory(AssetFactory):
 
     def create_asset(self, i=0, **params):
         components = self.create_cabinet_components(i=i, drawer_only=self.drawer_only)
-        
+
         cabinet_params = self.get_cabinet_params(i=i)
         join_objs = []
 
@@ -351,7 +351,7 @@ class KitchenCabinetBaseFactory(AssetFactory):
                 continue
             else:
                 contain_attach = True
-       
+
         if contain_attach:
             bpy.ops.mesh.primitive_plane_add(
                 size=1,
@@ -373,7 +373,7 @@ class KitchenCabinetBaseFactory(AssetFactory):
             )
 
             join_objs += [obj]
-        
+
         for i, c in enumerate(components):
             if c[1] == "door":
                 butil.delete(c[2][:-1])
@@ -384,10 +384,10 @@ class KitchenCabinetBaseFactory(AssetFactory):
             join_objs.append(c[0])
 
             # butil.delete(c[:1])
-        
+
         obj = butil.join_objects(join_objs)
         tagging.tag_system.relabel_obj(obj)
-       
+
         return obj
 
 

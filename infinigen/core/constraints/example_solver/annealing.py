@@ -197,7 +197,7 @@ class SimulatedAnnealingSolver:
 
         move = None
         retry = None
-        for retry, move in enumerate(move_gen): #MARK
+        for retry, move in enumerate(move_gen):  # MARK
             if retry == self.max_invalid_candidates:
                 logger.debug(
                     f"{move_gen=} reached {self.max_invalid_candidates=} without succeeding an apply()"
@@ -225,7 +225,7 @@ class SimulatedAnnealingSolver:
         return temp
 
     def metrop_hastings_with_viol(self, prop_result: evaluator.EvalResult, temp: float):
-        prop_viol = prop_result.viol_count() #MARK
+        prop_viol = prop_result.viol_count()  # MARK
         curr_viol = self.curr_result.viol_count()
 
         diff = prop_result.loss() - self.curr_result.loss()

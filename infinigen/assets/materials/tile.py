@@ -58,9 +58,9 @@ def mix_shader(nw, base_shader, offset, rotations, mortar, alternating, selectio
                 color = nw.new_node(
                     Nodes.MixRGB,
                     input_kwargs={
-                        0: darken_factor, #控制颜色的深度
-                        6: color,  #基础颜色
-                        7: nw.scalar_sub(1, mortar), #调整混合
+                        0: darken_factor,  # 控制颜色的深度
+                        6: color,  # 基础颜色
+                        7: nw.scalar_sub(1, mortar),  # 调整混合
                     },
                     attrs={"blend_type": "MULTIPLY", "data_type": "RGBA"},
                 ).outputs[2]
@@ -121,7 +121,8 @@ def mix_shader(nw, base_shader, offset, rotations, mortar, alternating, selectio
         Nodes.MaterialOutput, input_kwargs={"Surface": shader, "Displacement": disp}
     )
 
-#方形瓷砖材质的着色器
+
+# 方形瓷砖材质的着色器
 def shader_square_tile(
     nw: NodeWrangler, base_shader, vertical=False, alternating=None, scale=1, **kwargs
 ):
@@ -173,8 +174,7 @@ def shader_square_tile(
         ).outputs.get,
         ["Color", "Fac"],
     )
-    import pdb
-    pdb.set_trace()
+    #MARK
 
     # 创建棋盘纹理选择
     selections = [
@@ -182,7 +182,7 @@ def shader_square_tile(
             Nodes.CheckerTexture, [vec, (0, 0, 0, 1), (1, 1, 1, 1), 1 / size]
         ).outputs[1]
     ]
-    
+
     # 定义旋转角度
     rotations = np.pi / 2 * np.arange(2)
 

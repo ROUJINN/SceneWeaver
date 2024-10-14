@@ -73,7 +73,7 @@ on = cl.StableAgainst(bottom, {t.Subpart.SupportSurface})
 front_against = cl.StableAgainst(
     front, side, margin=0.05, check_z=False
 )  # check_z=False
-leftright_leftright = cl.StableAgainst(leftright, leftright, margin=0.5) #YYD 0.05
+leftright_leftright = cl.StableAgainst(leftright, leftright, margin=0.5)  # YYD 0.05
 side_by_side = cl.StableAgainst(side, side)
 back_to_back = cl.StableAgainst(back, back)
 

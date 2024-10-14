@@ -693,7 +693,7 @@ def move_modifier(obj, mod, i):
         bpy.ops.object.modifier_move_to_index(modifier=mod.name, index=i)
 
 
-def join_objects(objs, check_attributes=False,debug=False):
+def join_objects(objs, check_attributes=False, debug=False):
     if check_attributes:
         # make sure objs[0] has slots to recieve all the attributes of objs[1:]
         join_target = objs[0]

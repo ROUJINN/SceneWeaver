@@ -178,8 +178,11 @@ def any_touching(
         mesh_copy = copy.deepcopy(scene.geometry[g])
         mesh_copy.vertices = mesh_copy.vertices @ scale_matrix
         hit, names, contacts = col.in_collision_single(
-            scene.geometry[g], transform=T, return_data=True, return_names=True
+           mesh_copy, transform=T, return_data=True, return_names=True
         )
+        # hit, names, contacts = col.in_collision_single(
+        #     scene.geometry[g], transform=T, return_data=True, return_names=True
+        # )
     elif isinstance(b, list):
         import pdb
 

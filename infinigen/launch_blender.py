@@ -34,12 +34,13 @@ def get_standalone_blender_path():
             f" and that one of {BLENDER_BINARY_RELATIVE} exists"
         )
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-m", "--module", type=str, default=None)
     parser.add_argument("-s", "--script", type=str, default=None)
     args, unknown_args = parser.parse_known_args()
-   
+
     cmd_args = [str(get_standalone_blender_path())]
 
     if args.module is not None:
@@ -65,7 +66,6 @@ if __name__ == "__main__":
     print(" ".join(cmd_args))
 
     subprocess.run(cmd_args, cwd=root)
-    
-    
 
-#python -m infinigen.launch_blender -m infinigen_examples.generate_indoors -- --seed 0 --task coarse --output_folder outputs/indoors/coarse -g fast_solve.gin overhead.gin singleroom.gin -p compose_indoors.terrain_enabled=False compose_indoors.overhead_cam_enabled=True compose_indoors.solve_max_rooms=1 compose_indoors.invisible_room_ceilings_enabled=True compose_indoors.restrict_single_supported_roomtype=True
+
+# python -m infinigen.launch_blender -m infinigen_examples.generate_indoors -- --seed 0 --task coarse --output_folder outputs/indoors/coarse -g fast_solve.gin overhead.gin singleroom.gin -p compose_indoors.terrain_enabled=False compose_indoors.overhead_cam_enabled=True compose_indoors.solve_max_rooms=1 compose_indoors.invisible_room_ceilings_enabled=True compose_indoors.restrict_single_supported_roomtype=True

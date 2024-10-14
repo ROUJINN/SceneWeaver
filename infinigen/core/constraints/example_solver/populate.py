@@ -113,8 +113,7 @@ def populate_state_placeholders(state: State, filter=None, final=True):
 
     if final:
         return
-    
-    
+
     # objects modified in any way (via pholder update or boolean cut) must be synched with trimesh state
     for objkey, old_objname in tqdm(
         set(update_state_mesh_objs), desc="Updating trimesh with populated objects"
@@ -129,4 +128,3 @@ def populate_state_placeholders(state: State, filter=None, final=True):
         if not final:
             tagging.tag_canonical_surfaces(os.obj)
         parse_scene.add_to_scene(state.trimesh_scene, os.obj, preprocess=True)
-

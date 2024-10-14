@@ -85,7 +85,7 @@ def all_relations_valid(state, name):
 @gin.configurable
 def check_post_move_validity(
     state: State, name: str, disable_collision_checking=False, visualize=False
-): #MARK
+):  # MARK
     scene = state.trimesh_scene
     objstate = state.objs[name]
 
@@ -110,7 +110,7 @@ def check_post_move_validity(
     if t.Semantics.NoCollision in objstate.tags:
         return True
 
-    touch = any_touching(  #mark
+    touch = any_touching(  # mark
         scene, objstate.obj.name, collision_objs, bvh_cache=state.bvh_cache
     )
     if not constrain_contact(touch, should_touch=None, max_depth=0.0001):
