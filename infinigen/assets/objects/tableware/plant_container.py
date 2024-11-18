@@ -6,6 +6,9 @@ import bpy
 import numpy as np
 from numpy.random import uniform
 
+import GPT
+from GPT.constants import OBJATHOR_ASSETS_DIR
+from GPT.retrieve import ObjectRetriever
 from infinigen.assets.material_assignments import AssetList
 from infinigen.assets.objects.cactus import CactusFactory
 from infinigen.assets.objects.monocot import MonocotFactory
@@ -30,9 +33,7 @@ from infinigen.core.util import blender as butil
 from infinigen.core.util.math import FixedSeed
 from infinigen.core.util.random import log_uniform
 
-from GPT.constants import OBJATHOR_ASSETS_DIR
-from GPT.retrieve import ObjectRetriever
-import GPT
+
 class PlantPotFactory(PotFactory):
     def __init__(self, factory_seed, coarse=False):
         super(PlantPotFactory, self).__init__(factory_seed, coarse)
@@ -55,10 +56,9 @@ class PlantContainerFactory(AssetFactory):
         super().__init__(factory_seed, coarse)
         self.retriever = GPT.Retriever
 
-    
     def create_placeholder(self, **kwargs) -> bpy.types.Object:
         self.side_size = 0.1437744745933212
-        self.hight = 0.6589937384939065 *0.1131059492213359+0.43295466035780455
+        self.hight = 0.6589937384939065 * 0.1131059492213359 + 0.43295466035780455
         return new_bbox(
             -self.side_size,
             self.side_size,
@@ -70,12 +70,13 @@ class PlantContainerFactory(AssetFactory):
 
     def create_asset(self, **params) -> bpy.types.Object:
         from ..objaverse.base import load_pickled_3d_asset
+
         cat = "Plant Container"
         object_names = self.retriever.retrieve_object_by_cat(cat)
-        for obj_name,score in object_names:
+        for obj_name, score in object_names:
             basedir = OBJATHOR_ASSETS_DIR
             # indir = f"{basedir}/processed_2023_09_23_combine_scale"
-            filename = f'{basedir}/{obj_name}/{obj_name}.pkl.gz'
+            filename = f"{basedir}/{obj_name}/{obj_name}.pkl.gz"
             try:
                 obj = load_pickled_3d_asset(filename)
                 break
@@ -87,7 +88,6 @@ class PlantContainerFactory(AssetFactory):
         )
         obj.scale = [scale] * 3
 
-      
         return obj
 
 
@@ -132,7 +132,7 @@ class PlantContainerFactoryOld(AssetFactory):
         # 获取模型的边缘中心位置，并提取 z 坐标
         edge_center = read_edge_center(obj)
         z = edge_center[:, -1]
-        
+
         # 计算脏物体（例如污垢或泥土）的 z 坐标，基于工厂的深度和比例因子
         dirt_z = self.dirt_ratio * self.base_factory.depth * self.base_factory.scale
         idx = np.argmin(np.abs(z - dirt_z) - horizontal * 10)
@@ -150,7 +150,7 @@ class PlantContainerFactoryOld(AssetFactory):
 
         # 获取新创建的脏物体（dirt_）
         dirt_ = bpy.context.selected_objects[-1]
-        butil.select_none()# 取消所有选择
+        butil.select_none()  # 取消所有选择
         # 完成基础资产的最终处理
         self.base_factory.finalize_assets(obj)
         # 对脏物体进行编辑，填充网格并应用修改
@@ -158,8 +158,8 @@ class PlantContainerFactoryOld(AssetFactory):
             bpy.ops.mesh.select_all(action="SELECT")
             bpy.ops.mesh.fill_grid()
         subsurf(dirt_, 3)
-        self.dirt_surface.apply(dirt_)# 应用脏物体的材质或表面效果
-        butil.apply_modifiers(dirt_)# 应用所有变换
+        self.dirt_surface.apply(dirt_)  # 应用脏物体的材质或表面效果
+        butil.apply_modifiers(dirt_)  # 应用所有变换
 
         # 删除远离中心的顶点，留下更小范围内的顶点
         remove_vertices(dirt_, lambda x, y, z: np.sqrt(x**2 + y**2) > radius * 0.92)
@@ -183,6 +183,7 @@ class PlantContainerFactoryOld(AssetFactory):
         # 将基础对象、植物和脏物体合并为一个对象
         obj = join_objects([obj, plant, dirt_])
         return obj
+
 
 class LargePlantContainerFactory(PlantContainerFactoryOld):
     plant_factories = [MonocotFactory]
