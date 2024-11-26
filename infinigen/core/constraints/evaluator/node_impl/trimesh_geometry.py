@@ -396,13 +396,17 @@ def min_dist(
     if len(a) == 1 and len(b) == 1 and a[0] == b[0]:
         return DistanceResult(dist=0, names=[a[0], b[0]], data=None)
     a, b, a_tags, b_tags = preprocess_collision_query_cases(a, b, a_tags, b_tags)
+    # 创建 a 的碰撞检测对象
     col = iu.col_from_subset(scene, a, a_tags, bvh_cache)
-
+    
+    # 如果 b 为空且 a 是单个对象，初始化一个非常大的距离和空数据
     if b is None and len(a) == 1:
         dist, data = 1e9, None
+    # 如果 b 为空但 a 有多个对象，计算 a 内部的最小距离
     elif b is None:
         lazydebug(logger, lambda: f"min_dist_internal({a=}, {b=})")
         dist, data = col.min_distance_internal(return_data=True)
+    # 如果 b 是单个对象
     elif isinstance(b, str):
         T, g = scene.graph[b]
         geom = scene.geometry[g]
@@ -413,26 +417,29 @@ def min_dist(
                 lazydebug(logger, lambda: f"{b=} had {mask.sum()=} for {b_tags=}")
             geom = geom.submesh(np.where(mask), append=True)
             assert len(geom.faces) == mask.sum()
-
+        # 计算 a 和 b 的最小距离
         lazydebug(logger, lambda: f"min_dist_single({a=}, {b=})")
         dist, data = col.min_distance_single(geom, transform=T, return_data=True)
-
+        # 如果数据名称中有 "__external"，替换为 b 的名称
         if "__external" in data.names:
             data.names.remove("__external")
             data.names.add(b)
             data._points[b] = data._points["__external"]
             data._points.pop("__external")
             logging.debug(f"WARNING: swapped __external for {b} to make {data.names}")
+            
+    # 如果 b 是一个列表或集合
     elif isinstance(b, (list, set)):
         logger.debug(f"min_dist_other({a=}, {b=})")
-        col2 = iu.col_from_subset(scene, b, b_tags, bvh_cache)
-        dist, data = col.min_distance_other(col2, return_data=True)
+        col2 = iu.col_from_subset(scene, b, b_tags, bvh_cache)# 为 b 创建碰撞检测对象
+        dist, data = col.min_distance_other(col2, return_data=True)  # 计算 a 和 b 的最小距离
     else:
-        raise ValueError(f"Unhandled case {a=} {b=}")
+        raise ValueError(f"Unhandled case {a=} {b=}") # 对未处理的情况抛出异常
 
     if data is not None:
         assert "__external" not in data.names
 
+    # 返回结果，包含最小距离、对应的对象名称和相关数据
     return DistanceResult(
         dist=dist, names=list(data.names) if data is not None else None, data=data
     )
@@ -1264,59 +1271,73 @@ def accessibility_cost(scene, a, b, normal, visualize=False, fast=True):
     Computes how much objs b block front access to a. b obj blockages are not summed.
     the closest b obj to a is taken as the representative blockage
     """
-
+    """
+    计算物体 b 在多大程度上阻挡了对物体 a 的正面访问。
+    注意：这里仅考虑距离 a 最近的 b，其他 b 不累加计算。
+    """
     if isinstance(a, str):
         a = [a]
     if isinstance(b, str):
         b = [b]
-
+    # 从 b 列表中移除 a 本身（防止自阻挡情况
     b = [b_name for b_name in b if b_name not in a]
     if len(b) == 0:
         return 0
-
+    import pdb
+    pdb.set_trace()
+    visualize  = True
     if visualize:
         fig, ax = plt.subplots()
+    # 从场景中获取 a 和 b 的三角网格（trimesh）和 Blender 对象
     a_trimeshes = iu.meshes_from_names(scene, a)
     b_trimeshes = iu.meshes_from_names(scene, b)
 
     a_objs = iu.blender_objs_from_names(a)
     iu.blender_objs_from_names(b)
 
-    score = 0
+    score = 0# 初始化阻挡分数
     for a_name, a_obj, a_trimesh in zip(a, a_objs, a_trimeshes):
+        # 获取物体 a 的质心
         a_centroid = a_trimesh.centroid
-
+        # 计算 a 的正面平面点和法向量（normal）
         front_plane_pt = a_centroid
         front_plane_normal = np.array(a_obj.matrix_world.to_3x3() @ Vector(normal))
-
+        # 将质心投影到正面平面上
         a_centroid_proj = (
             a_centroid
             - np.dot(a_centroid - front_plane_pt, front_plane_normal)
             * front_plane_normal
         )
 
+        # 如果使用快速计算方式
         if fast:
+            # 获取 b 的质心并找到距离 a 最近的 b
             # get the closest centroid in b and the mesh that it belongs to
             b_centroids = [b_trimesh.centroid for b_trimesh in b_trimeshes]
             distances = [np.linalg.norm(pt - a_centroid_proj) for pt in b_centroids]
-            min_index = np.argmin(distances)
-            b_closest_pt = b_centroids[min_index]
-            b_chosen = b[min_index]
+            min_index = np.argmin(distances) # 最近质心的索引
+            b_closest_pt = b_centroids[min_index]  # 最近的 b 的质心
+            b_chosen = b[min_index] # 对应的物体名称
         else:
+            # 如果不使用快速计算，通过场景中的最短距离计算 b
             # might need to change this to closest pt on the frontal plane
             res = min_dist(scene, a_name, b)
             b_chosen = res.names[1] if res.names[0] == a_name else res.names[0]
             b_closest_pt = res.data.point(b_chosen)
-
+        
+        # 计算从 a 到最近 b 的向量
         centroid_to_b = b_closest_pt - a_centroid_proj
-
+        
+        # 计算向量长度（距离）和 b 的对角线长度
         dist = np.linalg.norm(centroid_to_b)
         bounds = iu.meshes_from_names(scene, b_chosen)[0].bounds
         diag_length = np.linalg.norm(bounds[1] - bounds[0])
+        # 如果 b 在 a 的背面，则跳过该物体
         if np.dot(centroid_to_b, front_plane_normal) < 0:
             continue
-        # cos theta/dist
+        # cos theta/dist # 根据方向向量和距离计算阻挡分数
         score += (np.dot(centroid_to_b, front_plane_normal) / dist**2) * diag_length
+        # 如果启用了可视化，绘制阻挡示意图
         if visualize:
             ax.plot(
                 [a_centroid_proj[0], b_closest_pt[0]],

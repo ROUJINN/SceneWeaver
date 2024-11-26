@@ -3,3 +3,6 @@ python -m infinigen.launch_blender -m infinigen_examples.generate_indoors -- --s
 
 #python -m infinigen.launch_blender -m infinigen_examples.generate_indoors -- --seed 0 --task coarse --output_folder outputs/indoors/coarse_expand_whole_nobedframe -g fast_solve.gin overhead.gin studio.gin -p compose_indoors.terrain_enabled=False
 
+python -m infinigen.tools.export --input_folder outputs/indoors/debug --output_folder outputs/my_export_debug -f usdc -r 1024 --omniverse
+
+python {PATH_TO/isaac_sim.py} --scene-path outputs/my_export_debug/export_scene.blend/export_scene.usdc --json-path outputs/my_export_debug/export_scene.blend/solve_state.json 
