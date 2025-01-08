@@ -15,6 +15,8 @@ from infinigen.core.constraints import constraint_language as cl
 from infinigen.core.constraints import reasoning as r
 from infinigen.core.constraints.evaluator import eval_memo, node_impl
 from infinigen.core.constraints.example_solver.state_def import State
+from infinigen_examples.util.visible import invisible_others, visible_others
+import bpy
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +60,11 @@ def _compute_node_val(node: cl.Node, state: State, memo: dict):
             child_vals = {
                 name: evaluate_node(c, state, memo) for name, c in node.children()
             }
+            # if child_vals == {'operands[0]': 0, 'operands[1]': 0}:
+            #     child_vals = {
+            #     name: evaluate_node(c, state, memo) for name, c in node.children()
+            # } 
+
             kwargs = {}
             if hasattr(node, "others_tags"):
                 kwargs["others_tags"] = getattr(node, "others_tags")
@@ -225,9 +232,15 @@ def evaluate_problem(
         logger.debug(f"Evaluator got score {scores[name]} for {name=}")
 
     violated = {}
+    # invisible_others()
+    # bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
+    # visible_others()
     for name, node in problem.constraints.items():
+        if name == "chair":
+            a = 1
         logger.debug(f"Evaluating constraint {name=}")
         violated[name] = viol_count(node, state, memo, filter=filter)
         logger.debug(f"Evaluator found {violated[name]} violations for {name=}")
+        print(f"*********Evaluator found {violated[name]} violations for {name=}")
 
     return EvalResult(loss_vals=scores, violations=violated)

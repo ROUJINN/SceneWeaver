@@ -165,7 +165,9 @@ class Solver:
             (-AnyRelation(), Domain({Semantics.Object, -Semantics.Room}, []))
         ])
         """
-
+        # if desc == "side_obj_0":
+        #     import pdb
+        #     pdb.set_trace()
         desc_full = (desc, *var_assignments.values())
         # ('on_floor_0', 'bathroom_0-0')
 
@@ -191,12 +193,17 @@ class Solver:
 
         orig_bounds = r.constraint_bounds(consgraph)  # len(orig_bounds) = 63
         # find objects than can be add to fit requirment
+        print_bounds = True
         bounds = propose_discrete.preproc_bounds(
             orig_bounds, self.state, filter_domain, print_bounds=print_bounds
         )
         # #len(bounds) = 5
 
         if len(bounds) == 0:
+            bounds = propose_discrete.preproc_bounds(
+                orig_bounds, self.state, filter_domain, print_bounds=print_bounds
+            )
+            
             logger.info(f"No objects to be added for {desc_full=}, skipping")
             return self.state
 

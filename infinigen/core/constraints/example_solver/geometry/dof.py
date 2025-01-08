@@ -14,8 +14,6 @@ from shapely.geometry import Point
 
 import infinigen.core.constraints.example_solver.geometry.validity as validity
 import infinigen.core.util.blender as butil
-
-from infinigen_examples.util.visible import invisible_others, visible_others
 from infinigen.core import tagging
 from infinigen.core import tags as t
 from infinigen.core.constraints import constraint_language as cl
@@ -26,6 +24,7 @@ from infinigen.core.constraints.example_solver.room.constants import (
     WALL_HEIGHT,
     WALL_THICKNESS,
 )
+from infinigen_examples.util.visible import invisible_others, visible_others
 
 logger = logging.getLogger(__name__)
 
@@ -164,23 +163,25 @@ def check_init_valid(
                 f"{is_rotation_allowed.__name__} got {res=} with {rotation_axis=} {reference_normal=} {dot=}"
             )
         return res
-
+    # 获取第一个对象和目标的旋转信息，并执行旋转
     a, b, rotation_axis, rotation_angle, plane_normal_b = get_rot(0)
     iu.rotate(state.trimesh_scene, a, rotation_axis, rotation_angle)
     first_plane_normal = plane_normal_b  # Save the normal of the first plane
 
     dof_remaining = True  # Degree of freedom remaining after the first alignment
 
-    # Check and apply rotations for subsequent planes
+    # Check and apply rotations for subsequent planes # 对后续平面进行检查和旋转
     for i in range(1, len(obj_planes)):
-        a, b, rotation_axis, rotation_angle, plane_normal_b = get_rot(i)
+        a, b, rotation_axis, rotation_angle, plane_normal_b = get_rot(i)  #z axies
 
         if np.isclose(np.linalg.norm(rotation_angle), 0, atol=1e-01):
+            # 如果不需要旋转，跳过当前平面
             logger.debug(f"no rotation needed for {i=} of {len(obj_planes)}")
             continue
 
         rot_allowed = is_rotation_allowed(rotation_axis, first_plane_normal)
         if dof_remaining and rot_allowed:
+            # 如果旋转允许，执行旋转
             # Rotate around the normal of the first plane
             iu.rotate(state.trimesh_scene, a, rotation_axis, rotation_angle)
             dof_remaining = False  # No more degrees of freedom remaining
@@ -287,6 +288,7 @@ def apply_relations_surfacesample(
             )
         # 获取父对象
         parent_obj = state.objs[relation_state.target_name].obj
+        # print(parent_obj)
         # 获取对象和平面关系状态
         obj_plane, parent_plane = state.planes.get_rel_state_planes(
             state, name, relation_state
@@ -314,6 +316,12 @@ def apply_relations_surfacesample(
                 raise NotImplementedError  # 抛出未实现的异常
 
     # 检查初始化是否有效
+    if "OfficeChairFactory" in name :
+        a = 1
+    # print([i.child_plane_idx for i in obj_state.relations])
+    # print(obj_planes)
+    # print([i.parent_plane_idx for i in obj_state.relations])
+    # print(parent_planes)
     valid, dof, T = check_init_valid(state, name, obj_planes, parent_planes, margins)
     if not valid:
         rels = [(rels.relation, rels.target_name) for rels in obj_state.relations]
@@ -464,7 +472,11 @@ def validate_relations_feasible(state: state_def.State, name: str) -> bool:
 
 @gin.configurable
 def try_apply_relation_constraints(
-    state: state_def.State, name: str, n_try_resolve=10, visualize=False, expand_collision=False
+    state: state_def.State,
+    name: str,
+    n_try_resolve=10,
+    visualize=False,
+    expand_collision=False,
 ):
     """
     name is in objs.name
@@ -478,7 +490,9 @@ def try_apply_relation_constraints(
     """
 
     validate_relations_feasible(state, name)
-
+    if "SimpleDeskFactory(7246963).bbox_placeholder(2397337" in state.objs[name].obj.name:
+        import pdb
+        pdb.set_trace()
     for retry in range(n_try_resolve):
         obj_state = state.objs[name]
 
@@ -513,15 +527,21 @@ def try_apply_relation_constraints(
         # faces = [v.vertices for v in obj_state.obj.data.polygons]
         # trimesh_obj = trimesh.Trimesh(vertices=vertices, faces=faces)
         # trimesh_obj.export(f"{name}.obj")
-        # if "SimpleBookcaseFactory" in name:
-     
-        if validity.check_post_move_validity(state, name, expand_collision=expand_collision):
+        if "OfficeChairFactory" in name:
+            # import pdb
+            # pdb.set_trace()
+            a = 1
+
+        # invisible_others()
+        # bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
+        # visible_others()
+        if validity.check_post_move_validity(
+            state, name, expand_collision=expand_collision
+        ):
             obj_state.dof_matrix_translation = combined_stability_matrix(parent_planes)
             obj_state.dof_rotation_axis = combine_rotation_constraints(parent_planes)
-            # invisible_others()
-            # bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
-            # visible_others()
-            # if "LargeShelfFactory(1502912).bbox_placeholder(2697479)" in state.objs[name].obj.name:
+            
+            # if "SimpleDeskFactory(7246963).bbox_placeholder(2397337" in state.objs[name].obj.name:
             #     import pdb
             #     pdb.set_trace()
             # import pdb

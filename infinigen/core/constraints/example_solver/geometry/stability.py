@@ -167,6 +167,8 @@ def stable_against(
         )
         res = is_vertically_contained(projected_a_rotated, projected_b_rotated)
 
+    # if obj_name=="850732_BookFactory":
+    #     visualize=True
     if visualize:
         fig, ax = plt.subplots()
         iu.plot_geometry(ax, projected_a, "blue")

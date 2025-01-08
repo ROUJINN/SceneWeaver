@@ -67,7 +67,9 @@ def reldom_satisfies(
 def reldom_intersects(
     a: tuple[cl.Relation, Domain], b: tuple[cl.Relation, Domain], **kwargs
 ):
-    return a[0].intersects(b[0]) and a[1].intersects(b[1], **kwargs)
+    intersect1 = a[0].intersects(b[0])
+    intersect2 = a[1].intersects(b[1], **kwargs)
+    return intersect1 and intersect2
 
 
 def reldom_intersection(

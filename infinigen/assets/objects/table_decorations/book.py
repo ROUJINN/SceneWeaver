@@ -2,7 +2,6 @@
 # This source code is licensed under the BSD 3-Clause license found in the LICENSE file in the root directory of this source tree.
 
 import math
-import random
 
 import bmesh
 
@@ -11,10 +10,6 @@ import bpy
 import numpy as np
 from numpy.random import uniform
 
-import GPT
-import GPT.retrieve
-from GPT.constants import OBJATHOR_ASSETS_DIR
-from GPT.retrieve import ObjectRetriever
 from infinigen.assets.material_assignments import AssetList
 from infinigen.assets.materials import text
 from infinigen.assets.utils.decorate import read_co, write_attribute, write_co
@@ -30,45 +25,61 @@ from infinigen.core.util.random import log_uniform
 class BookFactory(AssetFactory):
     def __init__(self, factory_seed, coarse=False):
         super(BookFactory, self).__init__(factory_seed, coarse)
-        self.rel_scale = log_uniform(1, 1.5)
-        self.skewness = log_uniform(1.3, 1.8)
-        self.unit = 0.0127
-        self.is_paperback = uniform() < 0.5
-        self.margin = uniform(0.005, 0.01)
-        self.offset = 0 if uniform() < 0.5 else log_uniform(0.002, 0.008)
-        self.thickness = uniform(0.002, 0.003)
+        self.rel_scale = log_uniform(1, 1.5)  # 设置相对缩放因子（使用对数均匀分布）
+        self.skewness = log_uniform(1.3, 1.8)  # 设置纵横比（使用对数均匀分布）
+        self.unit = 0.0127  # 定义单位尺度
+        self.is_paperback = uniform() < 0.5  # 随机选择是纸质封面还是硬封面
+        self.margin = uniform(0.005, 0.01)  # 设置封面边距
+        self.offset = 0 if uniform() < 0.5 else log_uniform(0.002, 0.008)  # 设置偏移量
+        self.thickness = uniform(0.002, 0.003)  # 设置封面厚度
 
+        # 获取材质列表并为封面和书面分配材质
         materials = AssetList["BookFactory"]()
-        self.surface = materials["surface"].assign_material()
-        self.cover_surface = materials["cover_surface"].assign_material()
+        self.surface = materials["surface"].assign_material()  # 为表面分配材质
+        self.cover_surface = materials[
+            "cover_surface"
+        ].assign_material()  # 为封面分配材质
+        # 如果封面材质是文本，进行特殊处理
         if self.cover_surface == text.Text:
             self.cover_surface = self.cover_surface(self.factory_seed)
-
+        # 获取磨损概率，并根据概率为磨损赋值
         scratch_prob, edge_wear_prob = materials["wear_tear_prob"]
         self.scratch, self.edge_wear = materials["wear_tear"]
-        self.scratch = None if uniform() > scratch_prob else self.scratch
-        self.edge_wear = None if uniform() > edge_wear_prob else self.edge_wear
-
+        self.scratch = (
+            None if uniform() > scratch_prob else self.scratch
+        )  # 根据概率是否应用磨损
+        self.edge_wear = (
+            None if uniform() > edge_wear_prob else self.edge_wear
+        )  # 根据概率是否应用边缘磨损
+        # 设置是否共享纹理
         self.texture_shared = uniform() < 0.2
 
     def create_asset(self, **params) -> bpy.types.Object:
+        # 随机生成书的尺寸
         width = int(log_uniform(0.08, 0.15) * self.rel_scale / self.unit) * self.unit
         height = int(width * self.skewness / self.unit) * self.unit
         depth = uniform(0.01, 0.02) * self.rel_scale
+        # 根据是否是纸质书籍选择生成对应的资产
         fn = self.make_paperback if self.is_paperback else self.make_hardcover
         # noinspection PyArgumentList
-        obj = fn(width, height, depth)
+        obj = fn(width, height, depth)  # 生成书籍对象
+        # from infinigen.tools.export import bake_object,bake_metal
+        # from pathlib import Path
+
+        # bake_object(obj,Path("/home/yandan/workspace/infinigen/debug"),1024,"usdc")
 
         return obj
 
+    # 完成资产的最后处理，例如应用磨损效果
     def finalize_assets(self, assets):
         if self.scratch:
-            self.scratch.apply(assets)
+            self.scratch.apply(assets)  # 应用磨损效果
         if self.edge_wear:
-            self.edge_wear.apply(assets)
+            self.edge_wear.apply(assets)  # 应用边缘磨损效果
 
+    # 生成纸质书籍的函数
     def make_paperback(self, width, height, depth):
-        paper = self.make_paper(depth, height, width)
+        paper = self.make_paper(depth, height, width)  # 创建纸张
         obj = new_cube()
         obj.location = width / 2, height / 2, depth / 2
         obj.scale = width / 2, height / 2, depth / 2
@@ -83,11 +94,12 @@ class BookFactory(AssetFactory):
                     geom.append(e)
             bmesh.ops.delete(bm, geom=geom, context="EDGES")
 
-        self.make_cover(obj)
-        write_attribute(obj, 1, "cover", "FACE")
-        obj = join_objects([paper, obj])
+        self.make_cover(obj)  # 创建封面
+        write_attribute(obj, 1, "cover", "FACE")  # 给封面面写属性
+        obj = join_objects([paper, obj])  # 将纸张和对象合并
         return obj
 
+    # 生成纸张的函数
     def make_paper(self, depth, height, width):
         paper = new_cube()
         paper.location = width / 2, height / 2, depth / 2
@@ -96,26 +108,28 @@ class BookFactory(AssetFactory):
         self.surface.apply(paper)
         return paper
 
+    # 生成硬封面的函数
     def make_hardcover(self, width, height, depth):
-        paper = self.make_paper(depth, height, width)
+        paper = self.make_paper(depth, height, width)  # 生成纸张
         obj = new_cube()
-        count = 8
+        count = 8  # 设置数量，表示重复的次数
         butil.modify_mesh(
             obj,
             "ARRAY",
             count=count,
             relative_offset_displace=(0, 0, 1),
             use_merge_vertices=True,
-        )
+        )  # 使用阵列修改器进行重复
         obj.location = 1, 1, 1
         butil.apply_transform(obj, loc=True)
+        # 编辑模式下删除不需要的顶点
         with butil.ViewportMode(obj, "EDIT"):
             bm = bmesh.from_edit_mesh(obj.data)
             geom = []
             for v in bm.verts:
                 if v.co[0] > 0 and 0 < v.co[-1] < count * 2:
-                    geom.append(v)
-            bmesh.ops.delete(bm, geom=geom, context="VERTS")
+                    geom.append(v)  # 满足条件的顶点加入 geom 列表
+            bmesh.ops.delete(bm, geom=geom, context="VERTS")  # 删除这些顶点
         obj.location = 0, -self.margin, 0
         obj.scale = (
             (width + self.margin) / 2,
@@ -126,8 +140,8 @@ class BookFactory(AssetFactory):
         x, y, z = read_co(obj).T
         ratio = np.minimum(z / depth, 1 - z / depth)
         x -= 4 * ratio * (1 - ratio) * self.offset
-        write_co(obj, np.stack([x, y, z]).T)
-        self.make_cover(obj)
+        write_co(obj, np.stack([x, y, z]).T)  # 写回调整后的坐标
+        self.make_cover(obj)  # 创建封面
         butil.modify_mesh(obj, "SOLIDIFY", thickness=self.thickness)
         write_attribute(obj, 1, "cover", "FACE")
         obj = join_objects([paper, obj])
@@ -136,7 +150,9 @@ class BookFactory(AssetFactory):
     def make_cover(self, obj):
         obj.rotation_euler[0] = np.pi / 2
         butil.apply_transform(obj)
-        wrap_front_back_side(obj, self.cover_surface, self.texture_shared)
+        wrap_front_back_side(
+            obj, self.cover_surface, self.texture_shared
+        )  # 包裹前后封面
         obj.rotation_euler[0] = -np.pi / 2
         butil.apply_transform(obj)
 
@@ -223,7 +239,6 @@ class BookStackFactory(AssetFactory):
             self.max_angle = uniform(np.pi / 9, np.pi / 6) if uniform() < 0.7 else 0
             self.max_rel_scale = max(f.rel_scale for f in self.base_factories)
             self.max_skewness = max(f.skewness for f in self.base_factories)
-        self.retriever = GPT.Retriever
 
     def create_placeholder(self, **kwargs) -> bpy.types.Object:
         x_lo = -0.15 * self.max_rel_scale / 2
@@ -237,14 +252,6 @@ class BookStackFactory(AssetFactory):
         x_3, y_3 = rotate(theta, x_hi, y_lo)
         x_4, y_4 = rotate(theta, x_hi, y_hi)
 
-        self.placeholder_size_x = (
-            max(max([x_1, x_2, x_3, x_4]), x_hi) - min(min([x_1, x_2, x_3, x_4]), x_lo)
-        ) / 2
-        self.placeholder_size_y = (
-            max(max([y_1, y_2, y_3, y_4]), y_hi) - min(min([y_1, y_2, y_3, y_4]), y_lo)
-        ) / 2
-        self.placeholder_size_z = 0.02 * self.max_rel_scale * 0.8
-
         return new_bbox(
             min(min([x_1, x_2, x_3, x_4]), x_lo),
             max(max([x_1, x_2, x_3, x_4]), x_hi),
@@ -254,33 +261,16 @@ class BookStackFactory(AssetFactory):
             self.n_books * 0.02 * self.max_rel_scale * 0.8,
         )
 
-    def create_asset(self, placeholder, **params) -> bpy.types.Object:
-        from ..objaverse.base import load_pickled_3d_asset
-
-        cat = "book stack"
-        object_names = self.retriever.retrieve_object_by_cat(cat)
-        object_names = [name for name, score in object_names if score > 30]
-        random.shuffle(object_names)
-
-        for obj_name in object_names:
-            basedir = OBJATHOR_ASSETS_DIR
-            # indir = f"{basedir}/processed_2023_09_23_combine_scale"
-            filename = f"{basedir}/{obj_name}/{obj_name}.pkl.gz"
-            try:
-                obj = load_pickled_3d_asset(filename)
-                break
-            except:
-                continue
-
-        scale = np.min(
-            np.array(
-                [
-                    self.placeholder_size_x,
-                    self.placeholder_size_y,
-                    self.placeholder_size_z,
-                ]
-            )
-            / np.max(np.abs(np.array(obj.bound_box)), 0)
-        )
-        obj.scale = [scale] * 3
-        return obj
+    def create_asset(self, **params) -> bpy.types.Object:
+        books = []
+        offset = 0
+        for i in range(self.n_books):
+            factory = np.random.choice(self.base_factories)
+            obj = factory.create_asset(i=i)
+            c = center(obj)[:-1]
+            obj.location = -c[0], -c[1], offset - np.min(read_co(obj)[:, -1])
+            obj.rotation_euler[-1] = uniform(-self.max_angle, self.max_angle)
+            butil.apply_transform(obj, True)
+            offset = np.max(read_co(obj)[:, -1])
+            books.append(obj)
+        return join_objects(books)

@@ -72,6 +72,7 @@ def home_asset_usage():
 
     used_as[Semantics.OfficeShelfItem] = {
         table_decorations.BookStackFactory,
+        # table_decorations.BookFactory,
         table_decorations.BookColumnFactory,
         elements.NatureShelfTrinketsFactory,
     }

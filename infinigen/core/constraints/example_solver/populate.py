@@ -87,7 +87,7 @@ def populate_state_placeholders(state: State, filter=None, final=True):
         update_state_mesh_objs.append((objkey, old_objname))
 
         *_, inst_seed = parse_asset_name(placeholder.name)
-        print(placeholder.name)
+        # print(placeholder.name)
         if "BookStackFactory" in placeholder.name:
             a = 1
 

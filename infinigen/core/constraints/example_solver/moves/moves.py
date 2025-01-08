@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class Move:
+
     names: typing.List[str]
 
     def __post_init__(self):

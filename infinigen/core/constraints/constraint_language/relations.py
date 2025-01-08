@@ -385,7 +385,16 @@ class Touching(GeometryRelation):
 class SupportedBy(Touching):
     __repr__ = no_frozenset_repr
 
+@dataclass(frozen=True)
+class CoPlanar(GeometryRelation):
+    margin: float = 0
 
+    # rev_normal: if True, align the normals so they face the SAME direction, rather than two planes facing eachother.
+    # typical use is for sink embedded in countertop
+    rev_normal: bool = False
+
+    __repr__ = no_frozenset_repr
+    
 @dataclass(frozen=True)
 class StableAgainst(GeometryRelation):
     margin: float = 0

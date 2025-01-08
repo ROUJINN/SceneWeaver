@@ -88,6 +88,10 @@ class Addition(moves.Move):
 
     def apply(self, state: State, expand_collision=False):  # mark
         (target_name,) = self.names
+        
+
+        #     import pdb
+        #     pdb.set_trace()
         assert target_name not in state.objs
 
         self._new_obj, gen = sample_rand_placeholder(self.gen_class)
@@ -109,15 +113,24 @@ class Addition(moves.Move):
 
         state.objs[target_name] = objstate
 
+        # if target_name == "113239_OfficeChairFactory":
+        #     a = 1
+        # if target_name != "113239_OfficeChairFactory" and  "OfficeChairFactory" in target_name:
+        #     a = 1
+        #     bpy.ops.wm.save_as_mainfile(filepath="/home/yandan/Desktop/a.blend")
+
         success = dof.try_apply_relation_constraints(
             state, target_name, expand_collision=expand_collision
         )  # check
-        if success:
-           
-            if "LargeShelfFactory(1502912).bbox_placeholder(2697479)" in objstate.obj.name:
-                import pdb
-                pdb.set_trace()
-            a = 1
+        # if success:
+        #     if (
+        #         "LargeShelfFactory(1502912).bbox_placeholder(2697479)"
+        #         in objstate.obj.name
+        #     ):
+        #         import pdb
+
+        #         pdb.set_trace()
+        #     a = 1
         logger.debug(f"{self} {success=}")
         return success
 
@@ -162,7 +175,9 @@ class Resample(moves.Move):
         parse_scene.add_to_scene(state.trimesh_scene, os.obj, preprocess=True)
         dof.apply_relations_surfacesample(state, target_name)
 
-        return validity.check_post_move_validity(state, target_name, expand_collision=expand_collision)
+        return validity.check_post_move_validity(
+            state, target_name, expand_collision=expand_collision
+        )
 
     def revert(self, state: State):
         (target_name,) = self.names

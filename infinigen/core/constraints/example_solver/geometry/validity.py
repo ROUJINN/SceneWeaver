@@ -5,6 +5,7 @@
 
 import logging
 
+import bpy
 import gin
 from shapely.geometry import MultiPolygon, Point, Polygon
 
@@ -24,7 +25,7 @@ from infinigen.core.constraints.example_solver.geometry.stability import stable_
 from infinigen.core.constraints.example_solver.state_def import State
 from infinigen.core.util import blender as butil
 from infinigen_examples.util.visible import invisible_others, visible_others
-import bpy
+
 logger = logging.getLogger(__name__)
 
 
@@ -73,12 +74,18 @@ def all_relations_valid(state, name):
     for i, relation_state in enumerate(rels):
         match relation_state.relation:
             case cl.StableAgainst(_child_tags, _parent_tags, _margin):
+                if "OfficeChairFactory" in name:
+                    a = 1
                 res = stable_against(state, name, relation_state)
-                if not res:
+                # import pdb
+                # pdb.set_trace()
+                
+                if res!=True:
                     logger.debug(
                         f"{name} failed relation {i=}/{len(rels)} {relation_state.relation} on {relation_state.target_name}"
                     )
                     return False
+                a = 1
             case _:
                 raise TypeError(f"Unhandled {relation_state.relation}")
 
@@ -87,8 +94,11 @@ def all_relations_valid(state, name):
 
 @gin.configurable
 def check_post_move_validity(
-    state: State, name: str, disable_collision_checking=False, visualize=False,
-    expand_collision=False
+    state: State,
+    name: str,
+    disable_collision_checking=False,
+    visualize=False,
+    expand_collision=False,
 ):  # MARK
     # import pdb
 
@@ -124,11 +134,11 @@ def check_post_move_validity(
     # objstate.obj.rotation_euler
     # Euler((0.0, -0.0, 1.570796012878418), 'XYZ')
     # if "SimpleBookcaseFactory" in name:
-    
+
     # invisible_others()
     # bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
     # visible_others()
-    
+
     if expand_collision:
         touch = any_touching_expand(  # mark
             scene,
@@ -136,7 +146,7 @@ def check_post_move_validity(
             collision_objs,
             bvh_cache=state.bvh_cache,
         )
-        
+
     else:
         touch = any_touching(  # mark
             scene, objstate.obj.name, collision_objs, bvh_cache=state.bvh_cache
@@ -159,7 +169,7 @@ def check_post_move_validity(
     # )
 
     # supposed to go through the consgraph here
-    
+
     return True
 
 

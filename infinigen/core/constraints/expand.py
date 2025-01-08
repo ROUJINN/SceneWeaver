@@ -3,7 +3,7 @@ import copy
 import mathutils
 import numpy as np
 
-D_base = 0.0
+D_base = 0.3
 EXPAND_DISTANCE = {
     # front
     "LargeShelfFactory": [D_base, 0, 0],

@@ -19,6 +19,7 @@ class RoomType:
     DiningRoom = "dining-room"
     Utility = "utility"
     Staircase = "staircase"
+    Office = "office"
 
 
 def get_room_type(name):
@@ -108,6 +109,8 @@ def make_demo_tree():
         "closet_1",
         "bathroom_1",
         "closet_2",
+        "office_0",
+        "office_1",
     ]
     return RoomGraph(children, rooms, 0)
 

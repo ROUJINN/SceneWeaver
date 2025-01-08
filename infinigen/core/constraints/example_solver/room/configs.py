@@ -19,6 +19,7 @@ EXTERIOR_CONNECTED_ROOM_TYPES = [
     RoomType.DiningRoom,
     RoomType.Kitchen,
     RoomType.LivingRoom,
+    RoomType.Office,
 ]
 SQUARE_ROOM_TYPES = [
     RoomType.Kitchen,
@@ -30,6 +31,7 @@ SQUARE_ROOM_TYPES = [
     RoomType.Balcony,
     RoomType.DiningRoom,
     RoomType.Utility,
+    RoomType.Office,
 ]
 TYPICAL_AREA_ROOM_TYPES = {
     RoomType.Kitchen: 20,
@@ -43,6 +45,7 @@ TYPICAL_AREA_ROOM_TYPES = {
     RoomType.Balcony: 8,
     RoomType.Hallway: 8,
     RoomType.Staircase: 20,
+    RoomType.Office: 60, 
 }
 ROOM_NUMBERS = {RoomType.Bathroom: (1, 10), RoomType.LivingRoom: (1, 10)}
 COMBINED_ROOM_TYPES = [
@@ -61,6 +64,7 @@ FUNCTIONAL_ROOM_TYPES = [
     RoomType.LivingRoom,
     RoomType.Bathroom,
     RoomType.DiningRoom,
+    RoomType.Office,
 ]
 WINDOW_ROOM_TYPES = defaultdict(
     lambda: 1,
@@ -89,6 +93,7 @@ def make_room_colors():
         RoomType.DiningRoom: hallway_color,
         RoomType.Utility: utility_color,
         RoomType.Staircase: hallway_color,
+        RoomType.Office: utility_color
     }
 
 
@@ -106,6 +111,7 @@ ROOM_CHILDREN = defaultdict(
             RoomType.DiningRoom: ("bool", 1.0),
             RoomType.Utility: ("bool", 0.2),
             RoomType.Hallway: ("categorical", 0.5, 0.4, 0.1),
+            RoomType.Office: ("bool", 1.0),  # Added
         },
         RoomType.Kitchen: {
             RoomType.Garage: ("bool", 0.5),
@@ -114,14 +120,23 @@ ROOM_CHILDREN = defaultdict(
         RoomType.Bedroom: {
             RoomType.Bathroom: ("bool", 0.3),
             RoomType.Closet: ("bool", 0.5),
+            RoomType.Office: ("bool", 0.4),  # Added
         },
         RoomType.Bathroom: {RoomType.Closet: ("bool", 0.2)},
         RoomType.DiningRoom: {
             RoomType.Kitchen: ("bool", 1.0),
             RoomType.Hallway: ("bool", 0.2),
         },
+        RoomType.Office: {  # New entry
+            # RoomType.LivingRoom: ("bool", 0.3),
+            # RoomType.Bedroom: ("bool", 0.4),
+            RoomType.Closet: ("bool", 0.1),
+            # RoomType.Bathroom: ("bool", 0.3),
+            # RoomType.Hallway: ("bool", 0.5),
+        },
     },
 )
+
 
 STUDIO_ROOM_CHILDREN = defaultdict(
     dict,
@@ -129,9 +144,21 @@ STUDIO_ROOM_CHILDREN = defaultdict(
         RoomType.LivingRoom: {
             RoomType.Bedroom: ("categorical", 0.0, 1.0),
             RoomType.DiningRoom: ("bool", 1.0),
+            RoomType.Office: ("bool", 0.6),  # Added
         },
-        RoomType.Bedroom: {RoomType.Bathroom: ("bool", 1.0)},
-        RoomType.DiningRoom: {RoomType.Kitchen: ("bool", 1.0)},
+        RoomType.Bedroom: {
+            RoomType.Bathroom: ("bool", 1.0),
+            RoomType.Office: ("bool", 0.4),  # Added
+        },
+        RoomType.DiningRoom: {
+            RoomType.Kitchen: ("bool", 1.0),
+            RoomType.Office: ("bool", 0.2),  # Added
+        },
+        RoomType.Office: {  # New entry
+            RoomType.LivingRoom: ("bool", 0.6),
+            RoomType.Bedroom: ("bool", 0.4),
+            RoomType.DiningRoom: ("bool", 0.2),
+        },
     },
 )
 UPSTAIRS_ROOM_CHILDREN = defaultdict(
@@ -144,15 +171,28 @@ UPSTAIRS_ROOM_CHILDREN = defaultdict(
             RoomType.Balcony: ("bool", 0.4),
             RoomType.Utility: ("bool", 0.2),
             RoomType.Hallway: ("categorical", 0.0, 0.5, 0.5),
+            RoomType.Office: ("bool", 0.5),  # Added
         },
         RoomType.Bedroom: {
             RoomType.Bathroom: ("bool", 0.3),
             RoomType.Closet: ("bool", 0.5),
+            RoomType.Office: ("bool", 0.4),  # Added
         },
-        RoomType.Bathroom: {RoomType.Closet: ("bool", 0.2)},
+        RoomType.Bathroom: {
+            RoomType.Closet: ("bool", 0.2),
+            RoomType.Office: ("bool", 0.1),  # Added
+        },
         RoomType.Balcony: {
             RoomType.Utility: ("bool", 0.4),
             RoomType.Hallway: ("bool", 0.1),
+            RoomType.Office: ("bool", 0.2),  # Added
+        },
+        RoomType.Office: {  # New entry
+            RoomType.LivingRoom: ("bool", 0.5),
+            RoomType.Bedroom: ("bool", 0.4),
+            RoomType.Bathroom: ("bool", 0.1),
+            RoomType.Closet: ("bool", 0.2),
+            RoomType.Hallway: ("bool", 0.5),
         },
     },
 )
@@ -161,8 +201,18 @@ LOOP_ROOM_TYPES = {
         RoomType.Garage: 0.2,
         RoomType.Balcony: 0.2,
         RoomType.Kitchen: 0.1,
+        RoomType.Office: 0.3,  # Added
     },
-    RoomType.Bedroom: {RoomType.Balcony: 0.1},
+    RoomType.Bedroom: {
+        RoomType.Balcony: 0.1,
+        RoomType.Office: 0.2,  # Added
+    },
+    RoomType.Office: {  # New entry
+        RoomType.LivingRoom: 0.3,
+        RoomType.Bedroom: 0.2,
+        RoomType.Balcony: 0.1,
+        RoomType.Kitchen: 0.05,
+    },
 }
 
 ROOM_WALLS = defaultdict(
@@ -179,6 +229,7 @@ ROOM_WALLS = defaultdict(
         ),
         RoomType.Balcony: ("weighted_choice", (1, brick), (5, plaster)),
         RoomType.Bathroom: ("weighted_choice", (1, tile), (3, advanced_tiles)),
+        RoomType.Office: ("weighted_choice", (1, brick), (4, plaster)),  # Added
     },
 )
 
@@ -201,6 +252,12 @@ ROOM_FLOORS = defaultdict(
         ),
         RoomType.Bathroom: ("weighted_choice", (1, tile), (3, advanced_tiles)),
         RoomType.Balcony: ("weighted_choice", (1, tile), (3, advanced_tiles)),
+        RoomType.Office: (
+            "weighted_choice",
+            (3, tiled_wood),  # Professional and warm look
+            (1, rug),         # Comfort and acoustic dampening
+            (2, advanced_tiles),  # Durable and modern
+        ),  # Added
     },
 )
 

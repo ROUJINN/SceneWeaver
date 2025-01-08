@@ -63,7 +63,6 @@ from infinigen_examples.util.generate_indoors_util import (
 
 logger = logging.getLogger(__name__)
 
-
 def default_greedy_stages():
     """Returns descriptions of what will be covered by each greedy stage of the solver.
 
@@ -116,9 +115,7 @@ def default_greedy_stages():
 
     return greedy_stages
 
-
 all_vars = [cu.variable_room, cu.variable_obj]
-
 
 @gin.configurable
 def compose_indoors(output_folder: Path, scene_seed: int, **overrides):
@@ -156,7 +153,8 @@ def compose_indoors(output_folder: Path, scene_seed: int, **overrides):
                     # Only these roomtypes have constraints written in home_constraints.
                     # Others will be empty-ish besides maybe storage and plants
                     # TODO: add constraints to home_constraints for garages, offices, balconies, etc
-                    t.Semantics.Bedroom,
+                    t.Semantics.Office,
+                    # t.Semantics.Bedroom,
                     # t.Semantics.LivingRoom,
                     # t.Semantics.Kitchen,
                     # t.Semantics.Bathroom,
