@@ -82,24 +82,18 @@ def home_constraints():
     # constraints = OrderedDict()
     # score_terms = OrderedDict()
 
-
     # furniture = obj[Semantics.Furniture].related_to(rooms, cu.on_floor)
     # wallfurn = furniture.related_to(rooms, cu.against_wall)
     # # storage = wallfurn[Semantics.Storage]
-
-
-
-
-
 
     # # Define specific categories relevant to a bookstore
     # bookshelves = wallfurn[shelves.LargeShelfFactory]
     # desks = furniture[shelves.SimpleDeskFactory]
     # reading_chairs = furniture[seating.OfficeChairFactory]
     # # decors = obj[decor.AquariumTankFactory]  # Decorative elements
-    
+
     # # region Bookstore
-    
+
     # # bookstores = rooms[Semantics.Utility].excludes(cu.room_types)
 
     # # Bookstore-specific rules
@@ -144,53 +138,272 @@ def home_constraints():
     #     )
     # )
     # # endregion
+
+    # region base
     rooms = cl.scene()[{Semantics.Room, -Semantics.Object}]
     obj = cl.scene()[{Semantics.Object, -Semantics.Room}]
-    bookstore = rooms[Semantics.Office].excludes(cu.room_types)
-
+    
     constraints = OrderedDict()
     score_terms = OrderedDict()
 
     furniture = obj[Semantics.Furniture].related_to(rooms, cu.on_floor)
     wallfurn = furniture.related_to(rooms, cu.against_wall)
+    storage = wallfurn[Semantics.Storage]
 
-    bookshelves_obj = wallfurn[shelves.LargeShelfFactory]
-    checkout_counter_obj = furniture[shelves.SidetableDeskFactory]
-    reading_tables_obj = furniture[tables.TableDiningFactory]
-    chairs_obj = furniture[seating.ChairFactory].related_to(reading_tables_obj, cu.front_against)
+    
 
-    books_obj = obj[table_decorations.BookStackFactory]
-    lamps_obj = obj[lamp.DeskLampFactory]
-
-    constraints["bookstore"] = bookstore.all(
+    params = sample_home_constraint_params()
+    score_terms["furniture_fullness"] = rooms.mean(
         lambda r: (
-            checkout_counter_obj.related_to(r).count().in_range(1, 1)
-            * bookshelves_obj.related_to(r).count().in_range(5, 5)
-            * reading_tables_obj.related_to(r).count().in_range(2, 2)
-            * chairs_obj.related_to(r).count().in_range(8, 8)
-            # * (chairs_obj.related_to(r).count()>=0)
-            * bookshelves_obj.related_to(r).all(
+            furniture.related_to(r)
+            .volume(dims=(0, 1))
+            .safediv(r.volume(dims=(0, 1)))
+            .sub(params["furniture_fullness_pct"])
+            .abs()
+            .minimize(weight=15)
+        )
+    )
+
+    # 通过计算房间内物品（如家具）与其他物品（如装饰物或容器）之间的体积比率来优化物品的排列，从而确保物品在物品中的填充度符合预期。
+    score_terms["obj_in_obj_fullness"] = rooms.mean(
+        lambda r: (
+            furniture.related_to(r).mean(
+                lambda f: (
+                    obj.related_to(f, cu.on)
+                    .volume()
+                    .safediv(f.volume())
+                    .sub(params["obj_interior_obj_pct"])
+                    .abs()
+                    .minimize(weight=10)  # 计算填充度误差并最小化
+                )
+            )
+        )
+    )
+    def top_fullness_pct(f):
+        return (
+            obj.related_to(f, cu.ontop)
+            .volume(dims=(0, 1))
+            .safediv(f.volume(dims=(0, 1)))
+        )
+
+    score_terms["obj_ontop_storage_fullness"] = rooms.mean(
+        lambda r: (
+            storage.related_to(r).mean(
+                lambda f: (
+                    top_fullness_pct(f)
+                    .sub(params["obj_on_storage_pct"])
+                    .abs()
+                    .minimize(weight=10)
+                )
+            )
+        )
+    )
+
+    score_terms["obj_ontop_nonstorage_fullness"] = rooms.mean(
+        lambda r: (
+            furniture[-Semantics.Storage]
+            .related_to(r)
+            .mean(
+                lambda f: (
+                    top_fullness_pct(f)
+                    .sub(params["obj_on_nonstorage_pct"])
+                    .abs()
+                    .minimize(weight=10)
+                )
+            )
+        )
+    )
+    # endregion
+    
+    newroom = rooms[Semantics.Office].excludes(cu.room_types)
+    # region classroom
+
+    # teacher_desk_obj = wallfurn[shelves.SimpleDeskFactory]
+    # desk_obj = furniture[shelves.SimpleDeskFactory]#.related_to(teacher_desk_obj, cu.front_against)
+    # bookshelf_obj = wallfurn[shelves.SimpleBookcaseFactory]
+    # cabinet_obj = wallfurn[shelves.SingleCabinetFactory]
+    # book_obj = obj[table_decorations.BookStackFactory]
+    # laptop_obj = obj[appliances.MonitorFactory]
+
+    # constraints["classroom"] = game_room.all(
+    #     lambda r: (
+    #         teacher_desk_obj.related_to(r).count().in_range(10, 10)
+    #         * desk_obj.related_to(r).count().in_range(6, 6)
+    #         * bookshelf_obj.related_to(r).count().in_range(2, 2)
+    #         * cabinet_obj.related_to(r).count().in_range(1, 1)
+    #         * bookshelf_obj.related_to(r).all(
+    #             lambda s: (
+    #                 book_obj.related_to(s, cu.on).count().in_range(5, 5)
+    #                 * (book_obj.related_to(s, cu.on).count() >= 0)
+    #             )
+    #         )
+    #         * desk_obj.related_to(r).all(
+    #             lambda s: (
+    #                 laptop_obj.related_to(s, cu.ontop).count().in_range(1, 1)
+    #                 * (laptop_obj.related_to(s, cu.ontop).count() >= 0)
+    #             )
+    #         )
+    #         * teacher_desk_obj.related_to(r).all(
+    #             lambda s: (
+    #                 laptop_obj.related_to(s, cu.ontop).count().in_range(1, 1)
+    #                 * (laptop_obj.related_to(s, cu.ontop).count() >= 0)
+    #             )
+    #         )
+    #     )
+    # )
+
+    # score_terms["kitchen_island_placement"] = game_room.mean(
+    #     lambda r: (
+    #         desk_obj.mean(
+    #             lambda t: (
+    #                 # cl.angle_alignment_cost(t, teacher_desk_obj)
+    #                 # + cl.angle_alignment_cost(t, r, cu.walltags)
+    #                 cl.angle_alignment_cost(
+    #                     t, teacher_desk_obj.related_to(r), cu.front
+    #                 ).minimize(weight=1)
+    #             )
+    #         ).minimize(weight=100)
+    #     )
+    # )
+    # endregion
+
+    # region diningroom
+    # dining_table_obj = furniture[tables.TableDiningFactory]
+    # dining_chairs_obj = furniture[seating.ChairFactory].related_to(dining_table_obj, cu.front_against)
+    # cabinet_obj = wallfurn[shelves.SingleCabinetFactory]
+    # plate_obj = obj[tableware.PlateFactory]
+    # glass_obj = obj[tableware.CupFactory]
+    # vase_obj = obj[table_decorations.VaseFactory]
+    # bowl_obj = obj[tableware.BowlFactory]
+
+    # constraints["dining_room"] = room.all(
+    #     lambda r: (
+    #         dining_table_obj.related_to(r).count().in_range(1, 1)
+    #         * dining_chairs_obj.related_to(dining_table_obj.related_to(r)).count().in_range(6, 6)
+    #         * cabinet_obj.related_to(r).count().in_range(1, 1)
+    #         * dining_table_obj.related_to(r).all(
+    #             lambda s: (
+    #                 plate_obj.related_to(s, cu.ontop).count().in_range(6, 6)
+    #                 * glass_obj.related_to(s, cu.ontop).count().in_range(6, 6)
+    #                 * vase_obj.related_to(s, cu.ontop).count().in_range(1, 1)
+    #                 * bowl_obj.related_to(s, cu.ontop).count().in_range(6, 6)
+    #             )
+    #         )
+    #         * cabinet_obj.related_to(r).all(
+    #             lambda s: (
+    #                 plate_obj.related_to(s, cu.on).count().in_range(8, 8)
+    #                 * glass_obj.related_to(s, cu.on).count().in_range(8, 8)
+    #                 * bowl_obj.related_to(s, cu.on).count().in_range(8, 8)
+    #             )
+    #         )
+    #     )
+    # )
+    # endregion
+
+    # region living room
+    
+    sofa_obj = furniture[seating.SofaFactory]
+    armchair_obj = furniture[seating.ArmChairFactory]
+    coffee_table_obj = furniture[tables.CoffeeTableFactory]
+    TV_stand_obj = wallfurn[shelves.TVStandFactory]
+    large_shelf_obj = wallfurn[shelves.LargeShelfFactory]
+    bookcase_obj = wallfurn[shelves.SimpleBookcaseFactory]
+    side_table_obj = furniture[tables.SideTableFactory]
+    book_obj = obj[table_decorations.BookStackFactory]
+    plant_obj = obj[tableware.PlantContainerFactory]
+    vase_obj = obj[table_decorations.VaseFactory]
+    lamp_obj = obj[lamp.DeskLampFactory]
+
+
+    constraints["living_room"] = newroom.all(
+        lambda r: (
+            sofa_obj.related_to(r).count().in_range(2, 2)
+            * armchair_obj.related_to(r).count().in_range(2, 2)
+            * coffee_table_obj.related_to(r).related_to(sofa_obj.related_to(r), cu.front_against).count().in_range(1, 1)
+            * TV_stand_obj.related_to(r).count().in_range(1, 1)
+            * large_shelf_obj.related_to(r).count().in_range(1, 1)
+            * large_shelf_obj.related_to(r).all(
                 lambda s: (
-                    books_obj.related_to(s, cu.on).count().in_range(10, 10)
-                    # * (books_obj.related_to(s, cu.on).count()>=0)
+                    book_obj.related_to(s, cu.on).count().in_range(5, 5)
+                    * (book_obj.related_to(s, cu.on).count() >= 0)
                 )
             )
-            * reading_tables_obj.related_to(r).all(
-                lambda t: (
-                    books_obj.related_to(t, cu.ontop).count().in_range(5, 5)
-                    * lamps_obj.related_to(t, cu.ontop).count().in_range(4, 4)
-                    # * (lamps_obj.related_to(t, cu.ontop).count()>=0)
+            * bookcase_obj.related_to(r).count().in_range(1, 1)
+            * bookcase_obj.related_to(r).all(
+                lambda s: (
+                    book_obj.related_to(s, cu.on).count().in_range(10, 10)
+                    * (book_obj.related_to(s, cu.on).count() >= 0)
                 )
             )
-        )
-    )
+            * side_table_obj.related_to(r).count().in_range(2, 2)
+            * side_table_obj.related_to(r).related_to(armchair_obj.related_to(r), cu.side_by_side).count().in_range(1,1)
+            * side_table_obj.related_to(r).related_to(sofa_obj.related_to(r), cu.side_by_side).count().in_range(1,1)
+            * side_table_obj.related_to(r).all(
+                lambda s: (
+                    lamp_obj.related_to(s, cu.ontop).count().in_range(1, 1)
+                    * (lamp_obj.related_to(s, cu.ontop).count() >= 0)
+                )
+            )
+            * coffee_table_obj.related_to(r).all(
+                lambda s: (
+                    plant_obj.related_to(s, cu.ontop).count().in_range(1, 1)
+                    * (plant_obj.related_to(s, cu.ontop).count() >= 0)
+                    * vase_obj.related_to(s, cu.ontop).count().in_range(1, 1)
+                    * (vase_obj.related_to(s, cu.ontop).count() >= 0)))))
+    # endregion
+    # region bookstore
+    # rooms = cl.scene()[{Semantics.Room, -Semantics.Object}]
+    # obj = cl.scene()[{Semantics.Object, -Semantics.Room}]
+    # bookstore = rooms[Semantics.Office].excludes(cu.room_types)
 
-    score_terms["floor_covering"] = reading_tables_obj.mean(
-        lambda r: (
-            r.distance(rooms, cu.walltags).maximize(weight=3)
-            * cl.angle_alignment_cost(r, rooms, cu.walltags).minimize(weight=3)
-        )
-    )
+    # constraints = OrderedDict()
+    # score_terms = OrderedDict()
+
+    # furniture = obj[Semantics.Furniture].related_to(rooms, cu.on_floor)
+    # wallfurn = furniture.related_to(rooms, cu.against_wall)
+
+    # bookshelves_obj = wallfurn[shelves.LargeShelfFactory]
+    # checkout_counter_obj = furniture[shelves.SidetableDeskFactory]
+    # reading_tables_obj = furniture[tables.TableDiningFactory]
+    # chairs_obj = furniture[seating.ChairFactory].related_to(
+    #     reading_tables_obj, cu.front_against
+    # )
+
+    # books_obj = obj[table_decorations.BookStackFactory]
+    # lamps_obj = obj[lamp.DeskLampFactory]
+
+    # constraints["bookstore"] = bookstore.all(
+    #     lambda r: (
+    #         checkout_counter_obj.related_to(r).count().in_range(1, 1)
+    #         * bookshelves_obj.related_to(r).count().in_range(5, 5)
+    #         * reading_tables_obj.related_to(r).count().in_range(2, 2)
+    #         * chairs_obj.related_to(r).count().in_range(8, 8)
+    #         # * (chairs_obj.related_to(r).count()>=0)
+    #         * bookshelves_obj.related_to(r).all(
+    #             lambda s: (
+    #                 books_obj.related_to(s, cu.on).count().in_range(10, 10)
+    #                 # * (books_obj.related_to(s, cu.on).count()>=0)
+    #             )
+    #         )
+    #         * reading_tables_obj.related_to(r).all(
+    #             lambda t: (
+    #                 books_obj.related_to(t, cu.ontop).count().in_range(5, 5)
+    #                 * lamps_obj.related_to(t, cu.ontop).count().in_range(4, 4)
+    #                 # * (lamps_obj.related_to(t, cu.ontop).count()>=0)
+    #             )
+    #         )
+    #     )
+    # )
+
+    # score_terms["floor_covering"] = reading_tables_obj.mean(
+    #     lambda r: (
+    #         r.distance(rooms, cu.walltags).maximize(weight=3)
+    #         * cl.angle_alignment_cost(r, rooms, cu.walltags).minimize(weight=3)
+    #     )
+    # )
+
+    # # endregion
+
     # # region bedroom
     # rooms = cl.scene()[{Semantics.Room, -Semantics.Object}]
     # obj = cl.scene()[{Semantics.Object, -Semantics.Room}]
@@ -200,7 +413,7 @@ def home_constraints():
 
     # furniture = obj[Semantics.Furniture].related_to(rooms, cu.on_floor)
     # wallfurn = furniture.related_to(rooms, cu.against_wall)
-    
+
     # beds_obj = wallfurn[seating.BedFactory]
     # desks_obj = wallfurn[shelves.SimpleDeskFactory]
     # nightstand_obj = wallfurn[shelves.SingleCabinetFactory]
@@ -228,7 +441,6 @@ def home_constraints():
     #     )
     # )
     # # endregion
-
 
     return cl.Problem(
         constraints=constraints,

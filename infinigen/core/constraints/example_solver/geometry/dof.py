@@ -163,6 +163,7 @@ def check_init_valid(
                 f"{is_rotation_allowed.__name__} got {res=} with {rotation_axis=} {reference_normal=} {dot=}"
             )
         return res
+
     # 获取第一个对象和目标的旋转信息，并执行旋转
     a, b, rotation_axis, rotation_angle, plane_normal_b = get_rot(0)
     iu.rotate(state.trimesh_scene, a, rotation_axis, rotation_angle)
@@ -172,7 +173,7 @@ def check_init_valid(
 
     # Check and apply rotations for subsequent planes # 对后续平面进行检查和旋转
     for i in range(1, len(obj_planes)):
-        a, b, rotation_axis, rotation_angle, plane_normal_b = get_rot(i)  #z axies
+        a, b, rotation_axis, rotation_angle, plane_normal_b = get_rot(i)  # z axies
 
         if np.isclose(np.linalg.norm(rotation_angle), 0, atol=1e-01):
             # 如果不需要旋转，跳过当前平面
@@ -316,7 +317,7 @@ def apply_relations_surfacesample(
                 raise NotImplementedError  # 抛出未实现的异常
 
     # 检查初始化是否有效
-    if "OfficeChairFactory" in name :
+    if "OfficeChairFactory" in name:
         a = 1
     # print([i.child_plane_idx for i in obj_state.relations])
     # print(obj_planes)
@@ -490,8 +491,12 @@ def try_apply_relation_constraints(
     """
 
     validate_relations_feasible(state, name)
-    if "SimpleDeskFactory(7246963).bbox_placeholder(2397337" in state.objs[name].obj.name:
+    if (
+        "SimpleDeskFactory(7246963).bbox_placeholder(2397337"
+        in state.objs[name].obj.name
+    ):
         import pdb
+
         pdb.set_trace()
     for retry in range(n_try_resolve):
         obj_state = state.objs[name]
@@ -540,7 +545,7 @@ def try_apply_relation_constraints(
         ):
             obj_state.dof_matrix_translation = combined_stability_matrix(parent_planes)
             obj_state.dof_rotation_axis = combine_rotation_constraints(parent_planes)
-            
+
             # if "SimpleDeskFactory(7246963).bbox_placeholder(2397337" in state.objs[name].obj.name:
             #     import pdb
             #     pdb.set_trace()

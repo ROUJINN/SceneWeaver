@@ -51,7 +51,13 @@ bottom = {t.Subpart.Bottom, -t.Subpart.Top, -t.Subpart.Front, -t.Subpart.Back}
 back = {t.Subpart.Back, -t.Subpart.Top, -t.Subpart.Front}
 top = {t.Subpart.Top, -t.Subpart.Back, -t.Subpart.Bottom, -t.Subpart.Front}
 side = {-t.Subpart.Top, -t.Subpart.Bottom, -t.Subpart.Back, -t.Subpart.SupportSurface}
-front = {t.Subpart.Front, -t.Subpart.Top, -t.Subpart.Bottom, -t.Subpart.Back, -t.Subpart.SupportSurface}
+front = {
+    t.Subpart.Front,
+    -t.Subpart.Top,
+    -t.Subpart.Bottom,
+    -t.Subpart.Back,
+    -t.Subpart.SupportSurface,
+}
 leftright = {
     -t.Subpart.Top,
     -t.Subpart.Bottom,
@@ -85,4 +91,3 @@ back_to_back = cl.StableAgainst(back, back)
 
 variable_room = t.Variable("room")
 variable_obj = t.Variable("obj")
-

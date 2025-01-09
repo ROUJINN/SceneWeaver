@@ -88,7 +88,6 @@ class Addition(moves.Move):
 
     def apply(self, state: State, expand_collision=False):  # mark
         (target_name,) = self.names
-        
 
         #     import pdb
         #     pdb.set_trace()

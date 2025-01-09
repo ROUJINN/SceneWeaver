@@ -1,0 +1,103 @@
+{
+    "big_category_dict": {
+        "sofa": 2,
+        "armchair": 2,
+        "coffee table": 1,
+        "TV stand": 1,
+        "large shelf": 1,
+        "bookcase": 1,
+        "side table": 2
+    },
+    "category_against_wall": [
+        "TV stand",
+        "large shelf",
+        "bookcase"
+    ],
+    "relation_big_object": [
+        [
+            "coffee table",
+            "sofa",
+            "front_against"
+        ],
+        [
+            "side table",
+            "armchair",
+            "side_by_side"
+        ],
+        [
+            "side table",
+            "sofa",
+            "side_by_side"
+        ]
+    ],
+    "small_category_list": [
+        "remote control",
+        "book",
+        "plant",
+        "photo frame",
+        "vase",
+        "magazine",
+        "coaster",
+        "decorative item",
+        "candle",
+        "lamp"
+    ],
+    "relation_small_object": [
+        [
+            "book",
+            "large shelf",
+            "on",
+            "5"
+        ],
+        [
+            "book",
+            "bookcase",
+            "on",
+            "10"
+        ],
+        [
+            "plant",
+            "coffee table",
+            "ontop",
+            "1"
+        ],
+        [
+            "plant",
+            "side table",
+            "ontop",
+            "1"
+        ],
+        [
+            "vase",
+            "coffee table",
+            "ontop",
+            "1"
+        ],
+        [
+            "lamp",
+            "side table",
+            "ontop",
+            "1"
+        ]
+    ],
+    "name_mapping": {
+        "sofa": "seating.SofaFactory",
+        "armchair": "seating.ArmChairFactory",
+        "coffee table": "tables.CoffeeTableFactory",
+        "TV stand": "shelves.TVStandFactory",
+        "large shelf": "shelves.LargeShelfFactory",
+        "bookcase": "shelves.SimpleBookcaseFactory",
+        "side table": "tables.SideTableFactory",
+        "remote control": null,
+        "book": "table_decorations.BookStackFactory",
+        "plant": "tableware.PlantContainerFactory",
+        "photo frame": null,
+        "vase": "table_decorations.VaseFactory",
+        "magazine": null,
+        "coaster": null,
+        "decorative item": null,
+        "candle": null,
+        "lamp": "lamp.DeskLampFactory"
+    },
+    "gpt_text_response": "```python\nconstraints[\"living_room\"] = newroom.all(\n    lambda r: (\n        sofa_obj.related_to(r).count().in_range(2, 2)\n        * armchair_obj.related_to(r).count().in_range(2, 2)\n        * coffee_table_obj.related_to(r).count().in_range(1, 1)\n        * coffee_table_obj.related_to(r).related_to(sofa_obj.related_to(r), cu.front_against)\n        * TV_stand_obj.related_to(r).count().in_range(1, 1)\n        * large_shelf_obj.related_to(r).count().in_range(1, 1)\n        * large_shelf_obj.related_to(r).all(\n            lambda s: (\n                book_obj.related_to(s, cu.on).count().in_range(5, 5)\n                * (book_obj.related_to(s, cu.on).count() >= 0)\n            )\n        )\n        * bookcase_obj.related_to(r).count().in_range(1, 1)\n        * bookcase_obj.related_to(r).all(\n            lambda s: (\n                book_obj.related_to(s, cu.on).count().in_range(10, 10)\n                * (book_obj.related_to(s, cu.on).count() >= 0)\n            )\n        )\n        * side_table_obj.related_to(r).count().in_range(2, 2)\n        * side_table_obj.related_to(r).related_to(armchair_obj.related_to(r), cu.side_by_side)\n        * side_table_obj.related_to(r).related_to(sofa_obj.related_to(r), cu.side_by_side)\n        * side_table_obj.related_to(r).all(\n            lambda s: (\n                lamp_obj.related_to(s, cu.ontop).count().in_range(1, 1)\n                * (lamp_obj.related_to(s, cu.ontop).count() >= 0)\n            )\n        )\n        * coffee_table_obj.related_to(r).all(\n            lambda s: (\n                plant_obj.related_to(s, cu.ontop).count().in_range(1, 1)\n                * (plant_obj.related_to(s, cu.ontop).count() >= 0)\n                * vase_obj.related_to(s, cu.ontop).count().in_range(1, 1)\n                * (vase_obj.related_to(s, cu.ontop).count() >= 0"
+}

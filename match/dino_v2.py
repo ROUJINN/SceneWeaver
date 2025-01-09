@@ -1,14 +1,12 @@
 import numpy as np
-
 import torch
 import torchvision
-from torchvision.transforms import Resize, InterpolationMode, Normalize
+from torchvision.transforms import InterpolationMode, Normalize, Resize
 
 from .visual_encoder import VisualEncoder
 
 
 class DinoV2Encoder(VisualEncoder):
-
     BACKBONE_ARCHES = {
         "small": "vits14",
         "base": "vitb14",
@@ -24,13 +22,13 @@ class DinoV2Encoder(VisualEncoder):
     }
 
     def __init__(
-            self,
-            backbone_size="small",
-            aspect_ratio=(4, 3),
-            feature_scale=1,
-            batch_size=32,
-            preprocess_batch_size=None,
-            device="cuda",
+        self,
+        backbone_size="small",
+        aspect_ratio=(4, 3),
+        feature_scale=1,
+        batch_size=32,
+        preprocess_batch_size=None,
+        device="cuda",
     ):
         """
         Args:
@@ -58,13 +56,16 @@ class DinoV2Encoder(VisualEncoder):
         self.feature_scale = int(feature_scale)
 
         # Sanity check backbone size
-        assert backbone_size in self.BACKBONE_ARCHES, \
-            f"Got invalid dinov2 backbone size: {backbone_size}. Valid options are: {self.BACKBONE_ARCHES.keys()}"
+        assert (
+            backbone_size in self.BACKBONE_ARCHES
+        ), f"Got invalid dinov2 backbone size: {backbone_size}. Valid options are: {self.BACKBONE_ARCHES.keys()}"
         backbone_name = f"dinov2_{self.BACKBONE_ARCHES[backbone_size]}"
         self.backbone_size = backbone_size
 
         # Load the encoder backbone
-        self.backbone = torch.hub.load(repo_or_dir='facebookresearch/dinov2', model=backbone_name)
+        self.backbone = torch.hub.load(
+            repo_or_dir="facebookresearch/dinov2", model=backbone_name
+        )
         self.backbone.eval()
         self.backbone.to(self.device)
 
@@ -102,11 +103,15 @@ class DinoV2Encoder(VisualEncoder):
         return torchvision.transforms.Compose(
             [
                 torchvision.ops.Permute([0, 3, 1, 2]),
-                Resize((new_height, new_width), interpolation=InterpolationMode.BICUBIC),
+                Resize(
+                    (new_height, new_width), interpolation=InterpolationMode.BICUBIC
+                ),
                 Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
             ]
         )(x)
 
     def forward(self, x):
         _, _, H, W = x.shape
-        return self.backbone.forward_features(x)["x_norm_patchtokens"].view(-1, H // 14, W // 14, self.embedding_dim)
+        return self.backbone.forward_features(x)["x_norm_patchtokens"].view(
+            -1, H // 14, W // 14, self.embedding_dim
+        )

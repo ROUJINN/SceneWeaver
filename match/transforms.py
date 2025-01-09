@@ -2,6 +2,7 @@
 """
 Transforms and data augmentation for both image + bbox.
 """
+
 import os
 import random
 
@@ -73,9 +74,9 @@ def hflip(image, target):
     target = target.copy()
     if "boxes" in target:
         boxes = target["boxes"]
-        boxes = boxes[:, [2, 1, 0, 3]] * torch.as_tensor([-1, 1, -1, 1]) + torch.as_tensor(
-            [w, 0, w, 0]
-        )
+        boxes = boxes[:, [2, 1, 0, 3]] * torch.as_tensor(
+            [-1, 1, -1, 1]
+        ) + torch.as_tensor([w, 0, w, 0])
         target["boxes"] = boxes
 
     if "masks" in target:
@@ -119,7 +120,9 @@ def resize(image, target, size, max_size=None):
     if target is None:
         return rescaled_image, None
 
-    ratios = tuple(float(s) / float(s_orig) for s, s_orig in zip(rescaled_image.size, image.size))
+    ratios = tuple(
+        float(s) / float(s_orig) for s, s_orig in zip(rescaled_image.size, image.size)
+    )
     ratio_width, ratio_height = ratios
 
     target = target.copy()
@@ -140,7 +143,8 @@ def resize(image, target, size, max_size=None):
 
     if "masks" in target:
         target["masks"] = (
-            interpolate(target["masks"][:, None].float(), size, mode="nearest")[:, 0] > 0.5
+            interpolate(target["masks"][:, None].float(), size, mode="nearest")[:, 0]
+            > 0.5
         )
 
     return rescaled_image, target
@@ -155,7 +159,9 @@ def pad(image, target, padding):
     # should we do something wrt the original size?
     target["size"] = torch.tensor(padded_image.size[::-1])
     if "masks" in target:
-        target["masks"] = torch.nn.functional.pad(target["masks"], (0, padding[0], 0, padding[1]))
+        target["masks"] = torch.nn.functional.pad(
+            target["masks"], (0, padding[0], 0, padding[1])
+        )
     return padded_image, target
 
 

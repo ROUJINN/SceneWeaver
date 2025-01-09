@@ -9,6 +9,7 @@ import logging
 import operator
 from dataclasses import dataclass
 
+import bpy
 import pandas as pd
 
 from infinigen.core.constraints import constraint_language as cl
@@ -16,7 +17,6 @@ from infinigen.core.constraints import reasoning as r
 from infinigen.core.constraints.evaluator import eval_memo, node_impl
 from infinigen.core.constraints.example_solver.state_def import State
 from infinigen_examples.util.visible import invisible_others, visible_others
-import bpy
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +63,7 @@ def _compute_node_val(node: cl.Node, state: State, memo: dict):
             # if child_vals == {'operands[0]': 0, 'operands[1]': 0}:
             #     child_vals = {
             #     name: evaluate_node(c, state, memo) for name, c in node.children()
-            # } 
+            # }
 
             kwargs = {}
             if hasattr(node, "others_tags"):

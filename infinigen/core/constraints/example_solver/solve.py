@@ -203,7 +203,7 @@ class Solver:
             bounds = propose_discrete.preproc_bounds(
                 orig_bounds, self.state, filter_domain, print_bounds=print_bounds
             )
-            
+
             logger.info(f"No objects to be added for {desc_full=}, skipping")
             return self.state
 

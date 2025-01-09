@@ -5,6 +5,7 @@ import bpy
 import numpy as np
 from mathutils import Vector
 
+
 def load_pickled_3d_asset(file_path, idx=0):
     # Open the compressed pickled file
     with gzip.open(file_path, "rb") as f:

@@ -3,8 +3,13 @@
 
 # Authors: Lingjie Mei
 
+import math
+import random
+
+import bpy
 from numpy.random import uniform
 
+from GPT.constants import OBJATHOR_ASSETS_DIR
 from infinigen.assets.material_assignments import AssetList
 from infinigen.assets.utils.decorate import read_co, write_attribute
 from infinigen.assets.utils.misc import assign_material
@@ -16,10 +21,6 @@ from infinigen.core.placement.factory import AssetFactory
 from infinigen.core.util import blender as butil
 from infinigen.core.util.math import FixedSeed
 
-import math
-import random
-from GPT.constants import OBJATHOR_ASSETS_DIR
-import bpy
 
 class ObjaverseFactory(AssetFactory):
     is_fragile = False
@@ -27,7 +28,6 @@ class ObjaverseFactory(AssetFactory):
 
     def __init__(self, factory_seed, coarse=False):
         super().__init__(factory_seed, coarse)
-       
 
     def create_placeholder(self, **kwargs) -> bpy.types.Object:
         return new_bbox(  # LAST
@@ -38,7 +38,7 @@ class ObjaverseFactory(AssetFactory):
             -self.stand_height if self.has_stand else 0,  # z_min
             self.depth,  # z max
         )
-    
+
     def create_asset(self, placeholder, **params) -> bpy.types.Object:
         from ..objaverse.load_asset import load_pickled_3d_asset
 
@@ -57,7 +57,4 @@ class ObjaverseFactory(AssetFactory):
             except:
                 continue
 
-  
         return obj
-
-

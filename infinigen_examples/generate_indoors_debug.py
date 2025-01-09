@@ -59,7 +59,7 @@ from infinigen_examples.util.generate_indoors_util import (
     restrict_solving,
 )
 
-# from . import generate_nature  # noqa F401 # needed for nature gin configs to load
+from infinigen_examples import generate_nature  # noqa F401 # needed for nature gin configs to load
 
 logger = logging.getLogger(__name__)
 
@@ -122,6 +122,8 @@ all_vars = [cu.variable_room, cu.variable_obj]
 
 @gin.configurable
 def compose_indoors(output_folder: Path, scene_seed: int, **overrides):
+
+   
     p = pipeline.RandomStageExecutor(scene_seed, output_folder, overrides)
 
     logger.debug(overrides)
@@ -140,11 +142,11 @@ def compose_indoors(output_folder: Path, scene_seed: int, **overrides):
     terrain, terrain_mesh = p.run_stage(
         "terrain", add_coarse_terrain, use_chance=False, default=(None, None)
     )
-
+    
     p.run_stage("sky_lighting", lighting.sky_lighting.add_lighting, use_chance=False)
-
+    bpy.context.view_layer.update()  
     consgraph = home_constraints()
-    stages = default_greedy_stages()
+    stages = default_greedy_stages()  #'rooms', 'on_floor', 'on_wall', 'on_ceiling', 'side_obj', 'obj_ontop_obj', 'obj_on_support'
     checks.check_all(consgraph, stages, all_vars)
 
     stages, consgraph, limits = restrict_solving(stages, consgraph)
@@ -156,11 +158,10 @@ def compose_indoors(output_folder: Path, scene_seed: int, **overrides):
                     # Only these roomtypes have constraints written in home_constraints.
                     # Others will be empty-ish besides maybe storage and plants
                     # TODO: add constraints to home_constraints for garages, offices, balconies, etc
-                    t.Semantics.Office,
                     # t.Semantics.Bedroom,
                     # t.Semantics.LivingRoom,
                     # t.Semantics.Kitchen,
-                    # t.Semantics.Bathroom,
+                    t.Semantics.Bathroom,
                     # t.Semantics.DiningRoom,
                 ]
             )
@@ -169,28 +170,25 @@ def compose_indoors(output_folder: Path, scene_seed: int, **overrides):
         apply_greedy_restriction(stages, restrict_parent_rooms, cu.variable_room)
 
     solver = Solver(output_folder=output_folder)
-
+    
     def solve_rooms():
         return solver.solve_rooms(scene_seed, consgraph, stages["rooms"])
 
     state: state_def.State = p.run_stage("solve_rooms", solve_rooms, use_chance=False)
-    # bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
-
+    
     for area in bpy.context.screen.areas:
-        if area.type == "VIEW_3D":
+        if area.type == 'VIEW_3D':
             with bpy.context.temp_override(area=area):
-                area.spaces.active.shading.type = "MATERIAL"
+                area.spaces.active.shading.type='MATERIAL'
             for region in area.regions:
-                if region.type == "WINDOW":
-                    override = {
-                        "area": area,
-                        "region": region,
-                        "edit_object": bpy.context.edit_object,
-                    }
+                if region.type == 'WINDOW':
+                    override = {'area': area, 'region': region, 'edit_object': bpy.context.edit_object}
                     bpy.ops.view3d.view_all(override)
+
     # bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
 
     def solve_large():
+
         assignments = greedy.iterate_assignments(
             stages["on_floor"], state, all_vars, limits, nonempty=True
         )
@@ -202,52 +200,58 @@ def compose_indoors(output_folder: Path, scene_seed: int, **overrides):
                 n_steps=overrides["solve_steps_large"],
                 desc=f"on_floor_{i}",
                 abort_unsatisfied=overrides.get("abort_unsatisfied_large", False),
-                expand_collision=True,
             )
-            # bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
         return solver.state
 
-    def invisible_others():
-        # rooms_split["exterior"].hide_viewport = True
-        # rooms_split["exterior"].hide_render = True
-        mesh = butil.get_collection("placeholders:room_shells")
-        mesh.hide_viewport = True
-        # invisible_to_camera.apply(mesh.objects)
-        mesh = butil.get_collection("placeholders:portal_cutters")
-        mesh.hide_viewport = True
-        # invisible_to_camera.apply(mesh.objects)
-        mesh = butil.get_collection("placeholders:room_meshes")
-        mesh.hide_viewport = True
-        # invisible_to_camera.apply(mesh.objects)
-        return
-
+    # def invisible_others():
+    #     # rooms_split["exterior"].hide_viewport = True
+    #     # rooms_split["exterior"].hide_render = True
+    #     mesh = butil.get_collection("placeholders:room_shells")
+    #     mesh.hide_viewport = True
+    #     # invisible_to_camera.apply(mesh.objects)
+    #     mesh = butil.get_collection("placeholders:portal_cutters")
+    #     mesh.hide_viewport = True
+    #     # invisible_to_camera.apply(mesh.objects)
+    #     mesh = butil.get_collection("placeholders:room_meshes")
+    #     mesh.hide_viewport = True
+    #     # invisible_to_camera.apply(mesh.objects)
+    #     return
+        
     # p.run_stage("invisible_others", invisible_others, use_chance=False)
     # bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
-
+    
+    
     state = p.run_stage("solve_large", solve_large, use_chance=False, default=state)
-    # p.run_stage("invisible_others", invisible_others, use_chance=False)
     # bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
-    # import pdb
-    # pdb.set_trace()
 
-    solved_rooms = [
+    
+
+    
+
+    solved_rooms = [   #[bpy.data.objects['bedroom_0-0']]
         state.objs[assignment[cu.variable_room]].obj
         for assignment in greedy.iterate_assignments(
             stages["on_floor"], state, [cu.variable_room], limits
         )
     ]
-    solved_bound_points = np.concatenate([butil.bounds(r) for r in solved_rooms])
+
+    # array([[10.5      ,  0.       ,  0.       ],
+    #   [17.5      ,  4.5      ,  3.4867084]]) 
+    solved_bound_points = np.concatenate([butil.bounds(r) for r in solved_rooms]) 
+    # (array([10.5,  0. ,  0. ]), array([17.5      ,  4.5      ,  3.4867084]))
     solved_bbox = (
         np.min(solved_bound_points, axis=0),
         np.max(solved_bound_points, axis=0),
     )
 
+    
     house_bbox = np.concatenate(
         [
             butil.bounds(obj)
             for obj in solver.get_bpy_objects(r.Domain({t.Semantics.Room}))
         ]
     )
+    #(array([0., 0., 0.]), array([17.5      , 15.5      ,  3.4867084]))
     house_bbox = (np.min(house_bbox, axis=0), np.max(house_bbox, axis=0))
 
     camera_rigs = placement.camera.spawn_camera_rigs()
@@ -278,141 +282,146 @@ def compose_indoors(output_folder: Path, scene_seed: int, **overrides):
         return scene_preprocessed
 
     scene_preprocessed = p.run_stage("pose_cameras", pose_cameras, use_chance=False)
-
     # bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
+
     def animate_cameras():
         cam_util.animate_cameras(camera_rigs, solved_bbox, scene_preprocessed, pois=[])
 
     p.run_stage(
         "animate_cameras", animate_cameras, use_chance=False, prereq="pose_cameras"
     )
+    
 
-    p.run_stage(
-        "populate_intermediate_pholders",
-        populate.populate_state_placeholders,
-        solver.state,
-        filter=t.Semantics.AssetPlaceholderForChildren,
-        final=False,
-        use_chance=False,
-    )
+    # p.run_stage(
+    #     "populate_intermediate_pholders",
+    #     populate.populate_state_placeholders,
+    #     solver.state,
+    #     filter=t.Semantics.AssetPlaceholderForChildren,
+    #     final=False,
+    #     use_chance=False,
+    # )
+    
+    # def solve_medium():
+    #     n_steps = overrides["solve_steps_medium"]
+    #     for i, vars in enumerate(
+    #         greedy.iterate_assignments(stages["on_wall"], state, all_vars, limits)
+    #     ):
+    #         solver.solve_objects(
+    #             consgraph, stages["on_wall"], vars, n_steps, desc=f"on_wall_{i}"
+    #         )
+    #     for i, vars in enumerate(
+    #         greedy.iterate_assignments(stages["on_ceiling"], state, all_vars, limits)
+    #     ):
+    #         solver.solve_objects(
+    #             consgraph, stages["on_ceiling"], vars, n_steps, desc=f"on_ceiling_{i}"
+    #         )
+    #     for i, vars in enumerate(
+    #         greedy.iterate_assignments(stages["side_obj"], state, all_vars, limits)
+    #     ):
+    #         solver.solve_objects(
+    #             consgraph, stages["side_obj"], vars, n_steps, desc=f"side_obj_{i}"
+    #         )
+    #     return solver.state
 
-    def solve_medium():
-        n_steps = overrides["solve_steps_medium"]
-        for i, vars in enumerate(
-            greedy.iterate_assignments(stages["on_wall"], state, all_vars, limits)
-        ):
-            solver.solve_objects(
-                consgraph, stages["on_wall"], vars, n_steps, desc=f"on_wall_{i}"
-            )
-        for i, vars in enumerate(
-            greedy.iterate_assignments(stages["on_ceiling"], state, all_vars, limits)
-        ):
-            solver.solve_objects(
-                consgraph, stages["on_ceiling"], vars, n_steps, desc=f"on_ceiling_{i}"
-            )
-        for i, vars in enumerate(
-            greedy.iterate_assignments(stages["side_obj"], state, all_vars, limits)
-        ):
-            solver.solve_objects(
-                consgraph, stages["side_obj"], vars, n_steps, desc=f"side_obj_{i}"
-            )
-        return solver.state
+    # state = p.run_stage("solve_medium", solve_medium, use_chance=False, default=state)
+    # bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
 
-    state = p.run_stage("solve_medium", solve_medium, use_chance=False, default=state)
+    # def solve_small():
+       
+    #     n_steps = overrides["solve_steps_small"]
+    #     for i, vars in enumerate(
+    #         greedy.iterate_assignments(stages["obj_ontop_obj"], state, all_vars, limits)
+    #     ):
+    #         solver.solve_objects(
+    #             consgraph,
+    #             stages["obj_ontop_obj"],
+    #             vars,
+    #             n_steps,
+    #             desc=f"obj_ontop_obj_{i}",
+    #         )
+    #     for i, vars in enumerate(
+    #         greedy.iterate_assignments(
+    #             stages["obj_on_support"], state, all_vars, limits
+    #         )
+    #     ):
+    #         solver.solve_objects(
+    #             consgraph,
+    #             stages["obj_on_support"],
+    #             vars,
+    #             n_steps,
+    #             desc=f"obj_on_support_{i}",
+    #         )
+    #     # for i, vars in enumerate(greedy.iterate_assignments(stages['tertiary'], state, all_vars, limits)):
+    #     #    solver.solve_objects(consgraph, stages['tertiary'], vars, n_steps, desc=f"tertiary_{i}")
+    #     return solver.state
 
-    def solve_small():
-        n_steps = overrides["solve_steps_small"]
+    # state = p.run_stage("solve_small", solve_small, use_chance=False, default=state)
+    # bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
 
-        for i, vars in enumerate(
-            greedy.iterate_assignments(stages["obj_ontop_obj"], state, all_vars, limits)
-        ):
-            solver.solve_objects(
-                consgraph,
-                stages["obj_ontop_obj"],
-                vars,
-                n_steps,
-                desc=f"obj_ontop_obj_{i}",
-            )
-        for i, vars in enumerate(
-            greedy.iterate_assignments(
-                stages["obj_on_support"], state, all_vars, limits
-            )
-        ):
-            solver.solve_objects(
-                consgraph,
-                stages["obj_on_support"],
-                vars,
-                n_steps,
-                desc=f"obj_on_support_{i}",
-            )
-        # for i, vars in enumerate(greedy.iterate_assignments(stages['tertiary'], state, all_vars, limits)):
-        #    solver.solve_objects(consgraph, stages['tertiary'], vars, n_steps, desc=f"tertiary_{i}")
-        return solver.state
+    # p.run_stage(
+    #     "populate_assets", populate.populate_state_placeholders, state, use_chance=False
+    # )
+    
+    # def place_floating():
+    #     pholder_rooms = butil.get_collection("placeholders:room_meshes")
+    #     pholder_cutters = butil.get_collection("placeholders:portal_cutters")
+    #     pholder_objs = butil.get_collection("placeholders")
 
-    state = p.run_stage("solve_small", solve_small, use_chance=False, default=state)
+    #     obj_fac_names = load_txt_list(
+    #         repo_root() / "tests" / "assets" / "list_indoor_meshes.txt"
+    #     )
+    #     facs = [import_item(path) for path in obj_fac_names]
 
-    p.run_stage(
-        "populate_assets", populate.populate_state_placeholders, state, use_chance=False
-    )
+    #     placer = FloatingObjectPlacement(
+    #         generators=facs,
+    #         camera=cam_util.get_camera(0, 0),
+    #         background_objs=list(pholder_cutters.objects) + list(pholder_rooms.objects),
+    #         collision_objs=list(pholder_objs.objects),
+    #     )
 
-    def place_floating():
-        pholder_rooms = butil.get_collection("placeholders:room_meshes")
-        pholder_cutters = butil.get_collection("placeholders:portal_cutters")
-        pholder_objs = butil.get_collection("placeholders")
+    #     placer.place_objs(
+    #         num_objs=overrides.get("num_floating", 20),
+    #         normalize=overrides.get("norm_floating_size", True),
+    #         collision_placed=overrides.get("enable_collision_floating", False),
+    #         collision_existing=overrides.get("enable_collision_solved", False),
+    #     )
 
-        obj_fac_names = load_txt_list(
-            repo_root() / "tests" / "assets" / "list_indoor_meshes.txt"
-        )
-        facs = [import_item(path) for path in obj_fac_names]
+    # p.run_stage("floating_objs", place_floating, use_chance=False, default=state)
+    # bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
 
-        placer = FloatingObjectPlacement(
-            generators=facs,
-            camera=cam_util.get_camera(0, 0),
-            background_objs=list(pholder_cutters.objects) + list(pholder_rooms.objects),
-            collision_objs=list(pholder_objs.objects),
-        )
-
-        placer.place_objs(
-            num_objs=overrides.get("num_floating", 20),
-            normalize=overrides.get("norm_floating_size", True),
-            collision_placed=overrides.get("enable_collision_floating", False),
-            collision_existing=overrides.get("enable_collision_solved", False),
-        )
-
-    p.run_stage("floating_objs", place_floating, use_chance=False, default=state)
-
-    door_filter = r.Domain({t.Semantics.Door}, [(cl.AnyRelation(), stages["rooms"])])
-    window_filter = r.Domain(
-        {t.Semantics.Window}, [(cl.AnyRelation(), stages["rooms"])]
-    )
-    p.run_stage(
-        "room_doors",
-        lambda: room_dec.populate_doors(solver.get_bpy_objects(door_filter)),
-        use_chance=False,
-    )
-    p.run_stage(
-        "room_windows",
-        lambda: room_dec.populate_windows(solver.get_bpy_objects(window_filter)),
-        use_chance=False,
-    )
-
-    room_meshes = solver.get_bpy_objects(r.Domain({t.Semantics.Room}))
-    p.run_stage(
-        "room_stairs",
-        lambda: room_dec.room_stairs(state, room_meshes),
-        use_chance=False,
-    )
-    p.run_stage(
-        "skirting_floor",
-        lambda: make_skirting_board(room_meshes, t.Subpart.SupportSurface),
-    )
-    p.run_stage(
-        "skirting_ceiling", lambda: make_skirting_board(room_meshes, t.Subpart.Ceiling)
-    )
+    # door_filter = r.Domain({t.Semantics.Door}, [(cl.AnyRelation(), stages["rooms"])])
+    # window_filter = r.Domain(
+    #     {t.Semantics.Window}, [(cl.AnyRelation(), stages["rooms"])]
+    # )
+    # p.run_stage(
+    #     "room_doors",
+    #     lambda: room_dec.populate_doors(solver.get_bpy_objects(door_filter)),
+    #     use_chance=False,
+    # )
+    # p.run_stage(
+    #     "room_windows",
+    #     lambda: room_dec.populate_windows(solver.get_bpy_objects(window_filter)),
+    #     use_chance=False,
+    # )
+    
+    # room_meshes = solver.get_bpy_objects(r.Domain({t.Semantics.Room}))
+    # p.run_stage(
+    #     "room_stairs",
+    #     lambda: room_dec.room_stairs(state, room_meshes),
+    #     use_chance=False,
+    # )
+    
+    # p.run_stage(
+    #     "skirting_floor",
+    #     lambda: make_skirting_board(room_meshes, t.Subpart.SupportSurface),
+    # )
+    # p.run_stage(
+    #     "skirting_ceiling", lambda: make_skirting_board(room_meshes, t.Subpart.Ceiling)
+    # )
 
     rooms_meshed = butil.get_collection("placeholders:room_meshes")
     rooms_split = room_dec.split_rooms(list(rooms_meshed.objects))
-
+    
     p.run_stage(
         "room_walls", room_dec.room_walls, rooms_split["wall"].objects, use_chance=False
     )
@@ -435,6 +444,7 @@ def compose_indoors(output_folder: Path, scene_seed: int, **overrides):
         rooms_split["ceiling"].objects,
         use_chance=False,
     )
+    # bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
 
     # state.print()
     state.to_json(output_folder / "solve_state.json")
@@ -530,6 +540,7 @@ def compose_indoors(output_folder: Path, scene_seed: int, **overrides):
                         area.spaces.active.region_3d.view_perspective = "CAMERA"
                         break
                 break
+    # bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
 
     return {
         "height_offset": height,
@@ -548,7 +559,7 @@ def main(args):
         ],
     )
     constants.initialize_constants()
-
+   
     execute_tasks.main(
         compose_scene_func=compose_indoors,
         populate_scene_func=None,
@@ -558,6 +569,7 @@ def main(args):
         task_uniqname=args.task_uniqname,
         scene_seed=scene_seed,
     )
+
 
 
 if __name__ == "__main__":
@@ -612,10 +624,4 @@ if __name__ == "__main__":
             if len(args.debug) == 0 or any(name.endswith(x) for x in args.debug):
                 logging.getLogger(name).setLevel(logging.DEBUG)
 
-    # import match
-
-    # match.debug()
-    # import pdb
-
-    # pdb.set_trace()
     main(args)

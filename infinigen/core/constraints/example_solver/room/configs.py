@@ -45,7 +45,7 @@ TYPICAL_AREA_ROOM_TYPES = {
     RoomType.Balcony: 8,
     RoomType.Hallway: 8,
     RoomType.Staircase: 20,
-    RoomType.Office: 60, 
+    RoomType.Office: 60,
 }
 ROOM_NUMBERS = {RoomType.Bathroom: (1, 10), RoomType.LivingRoom: (1, 10)}
 COMBINED_ROOM_TYPES = [
@@ -93,7 +93,7 @@ def make_room_colors():
         RoomType.DiningRoom: hallway_color,
         RoomType.Utility: utility_color,
         RoomType.Staircase: hallway_color,
-        RoomType.Office: utility_color
+        RoomType.Office: utility_color,
     }
 
 
@@ -255,7 +255,7 @@ ROOM_FLOORS = defaultdict(
         RoomType.Office: (
             "weighted_choice",
             (3, tiled_wood),  # Professional and warm look
-            (1, rug),         # Comfort and acoustic dampening
+            (1, rug),  # Comfort and acoustic dampening
             (2, advanced_tiles),  # Durable and modern
         ),  # Added
     },

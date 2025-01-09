@@ -5,6 +5,7 @@
 # Authors: Alexander Raistrick
 
 import logging
+import random
 import typing
 from pprint import pprint
 
@@ -15,7 +16,7 @@ from infinigen.core.constraints import reasoning as r
 from infinigen.core.constraints.evaluator.domain_contains import objkeys_in_dom
 
 from . import state_def
-import random
+
 logger = logging.getLogger(__name__)
 
 
@@ -112,14 +113,16 @@ def find_assignments(
     (rel, dom), remaining_relations, implied = minimize_redundant_relations(relations)
     assert len(remaining_relations) < len(relations)  # 确保冗余关系被移除
 
-    if implied: # 如果剩余关系隐含当前关系
-        logger.debug(f"Found remaining_relations implies {(rel, dom)=}, skipping it") # 调试信息
-        yield from find_assignments( # 跳过当前关系，继续处理剩余关系
+    if implied:  # 如果剩余关系隐含当前关系
+        logger.debug(
+            f"Found remaining_relations implies {(rel, dom)=}, skipping it"
+        )  # 调试信息
+        yield from find_assignments(  # 跳过当前关系，继续处理剩余关系
             curr, relations=remaining_relations, assignments=assignments
         )
         return
 
-    if isinstance(rel, cl.AnyRelation): # 检查是否有未指定的关系
+    if isinstance(rel, cl.AnyRelation):  # 检查是否有未指定的关系
         pprint(relations)
         pprint([(rel, dom)] + remaining_relations)
         raise ValueError(
@@ -129,8 +132,8 @@ def find_assignments(
     candidates = objkeys_in_dom(dom, curr)
     random.shuffle(candidates)
 
-    for parent_candidate_name in candidates: # 遍历候选对象
-        logging.debug(f"{parent_candidate_name=}") # 调试信息
+    for parent_candidate_name in candidates:  # 遍历候选对象
+        logging.debug(f"{parent_candidate_name=}")  # 调试信息
         # 获取当前候选对象的状态
         parent_state = curr.objs[parent_candidate_name]
         # 获取符合关系父标签的平面数量
@@ -141,14 +144,14 @@ def find_assignments(
         parent_order = np.arange(n_parent_planes)
         np.random.shuffle(parent_order)
 
-        for parent_plane in parent_order: # 遍历每个平面
+        for parent_plane in parent_order:  # 遍历每个平面
             # logger.debug(f'Considering {parent_candidate_name=} {parent_plane=} {n_parent_planes=}')
             # 创建一个关系分配实例
             assignment = state_def.RelationState(
-                relation=rel, # 当前关系
-                target_name=parent_candidate_name, # 目标对象
+                relation=rel,  # 当前关系
+                target_name=parent_candidate_name,  # 目标对象
                 child_plane_idx=0,  # TODO fill in at apply()-time
-                parent_plane_idx=parent_plane, # 当前父对象的平面索引
+                parent_plane_idx=parent_plane,  # 当前父对象的平面索引
             )
             # 递归处理剩余关系
             yield from find_assignments(

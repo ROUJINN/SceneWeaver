@@ -97,18 +97,17 @@ def home_constraints():
     )
     monitors_office = obj[appliances.MonitorFactory].related_to(desks_office, cu.ontop)
     # deskchairs_office = furniture[seating.OfficeChairFactory]
-    
-    
+
     constraints["office"] = offices.all(
         lambda r: (
-            desks_office.related_to(r).count().in_range(6,6)
+            desks_office.related_to(r).count().in_range(6, 6)
             * desks_office.related_to(r).all(
                 lambda t: (
                     (deskchairs_office.related_to(t).count().in_range(2, 2))
                     * (monitors_office.related_to(t).count().in_range(2, 2))
                     # * (obj[Semantics.OfficeShelfItem].related_to(t, cu.on).count() >= 3)
                     * (deskchairs_office.related_to(r).related_to(t).count() >= 0)
-                    * (monitors_office.related_to(t).count()>=0)
+                    * (monitors_office.related_to(t).count() >= 0)
                 )
             )
             # *(deskchairs_office.count()==2)
@@ -125,7 +124,7 @@ def home_constraints():
     #         deskchairs_office.related_to(t).count()==1
     #     )
     # )
-        
+
     # * (  # allow sidetables next to any sofa
     #             sidetable.related_to(r)
     #             .related_to(sofas.related_to(r), cu.side_by_side)
@@ -149,9 +148,8 @@ def home_constraints():
     #     )
     # )
 
-
     # # endregion
-# region DESKS
+    # region DESKS
     # desks = wallfurn[shelves.SimpleDeskFactory]
     # deskchair = furniture[seating.OfficeChairFactory].related_to(
     #     desks, cu.front_against

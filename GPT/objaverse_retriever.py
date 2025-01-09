@@ -6,12 +6,11 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-
 from .constants import (
-    OBJATHOR_ANNOTATIONS_PATH,
     HOLODECK_THOR_ANNOTATIONS_PATH,
-    OBJATHOR_FEATURES_DIR,
     HOLODECK_THOR_FEATURES_DIR,
+    OBJATHOR_ANNOTATIONS_PATH,
+    OBJATHOR_FEATURES_DIR,
 )
 from .utils import get_bbox_dims
 
@@ -25,8 +24,6 @@ class ObjathorRetriever:
         sbert_model,
         retrieval_threshold,
     ):
-       
-
         objathor_annotations = compress_json.load(OBJATHOR_ANNOTATIONS_PATH)
         thor_annotations = compress_json.load(HOLODECK_THOR_ANNOTATIONS_PATH)
         self.database = {**objathor_annotations, **thor_annotations}

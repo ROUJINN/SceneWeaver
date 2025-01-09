@@ -1,8 +1,11 @@
 ################## list all Semantics category #####################
 from infinigen.core.tags import Semantics
+
 semantic_member = list((Semantics.__members__).values())
 
 ################## list all object factory #####################
+import inspect
+
 from infinigen.assets.objects import (
     appliances,
     bathroom,
@@ -16,55 +19,76 @@ from infinigen.assets.objects import (
     tableware,
     wall_decorations,
 )
-import inspect
 
 imported_modules = {
-    'appliances':appliances,
-    'bathroom':bathroom,
-    'decor':decor,
-    'elements':elements,
-    'lamp':lamp,
-    'seating':seating,
-    'shelves':shelves,
-    'table_decorations':table_decorations,
-    'tables':tables,
-    'tableware':tableware,
-    'wall_decorations':wall_decorations,
+    "appliances": appliances,
+    "bathroom": bathroom,
+    "decor": decor,
+    "elements": elements,
+    "lamp": lamp,
+    "seating": seating,
+    "shelves": shelves,
+    "table_decorations": table_decorations,
+    "tables": tables,
+    "tableware": tableware,
+    "wall_decorations": wall_decorations,
 }
+
 
 def get_classes_from_module(module=seating):
     return [name for name, obj in vars(module).items() if inspect.isclass(obj)]
 
+
 modulenames = []
 for modulename, module in imported_modules.items():
     class_list = get_classes_from_module(module)
-    modulenames += [modulename+"."+name for name in class_list]
+    modulenames += [modulename + "." + name for name in class_list]
 
 ############# load spatial constraints ###############
 from infinigen_examples.util import constraint_util as cu
+
 
 def get_local_variables(module):
     # Get all attributes of the module
     variables = {}
     for name, obj in vars(module).items():
         # Exclude imports and built-in attributes
-        if not (name.startswith("__") or inspect.ismodule(obj) or inspect.isfunction(obj) or inspect.isclass(obj)):
+        if not (
+            name.startswith("__")
+            or inspect.ismodule(obj)
+            or inspect.isfunction(obj)
+            or inspect.isclass(obj)
+        ):
             variables[name] = obj
     return variables
 
-local_variables = get_local_variables(cu) 
+
+local_variables = get_local_variables(cu)
 
 
 # relation = [key for key, value in local_variables.items() if not isinstance(value, set) ]
-relation = ['on_floor', 'flush_wall', 'against_wall', 'spaced_wall', 'hanging', 'side_against_wall', 
-            'ontop', 'on', 'front_against', 'front_to_front', 'leftright_leftright', 'side_by_side', 'back_to_back']
+relation = [
+    "on_floor",
+    "flush_wall",
+    "against_wall",
+    "spaced_wall",
+    "hanging",
+    "side_against_wall",
+    "ontop",
+    "on",
+    "front_against",
+    "front_to_front",
+    "leftright_leftright",
+    "side_by_side",
+    "back_to_back",
+]
 
 ################ room type #########################
-room_types = local_variables['room_types']
+room_types = local_variables["room_types"]
 
 ################ example of rule  ####################
 
-rules_example="""
+rules_example = """
     rooms = cl.scene()[{Semantics.Room, -Semantics.Object}]
     obj = cl.scene()[{Semantics.Object, -Semantics.Room}]
 
@@ -315,9 +339,7 @@ Please show me your rules for the given roomtype:
 """
 
 
-
 print(prompt)
-
 
 
 """

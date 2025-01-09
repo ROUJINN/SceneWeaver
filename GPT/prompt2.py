@@ -1,26 +1,27 @@
-
-from TongGPT import TongGPT,GPT4o,GPT4V
+from TongGPT import GPT4V, GPT4o, TongGPT
 
 
 class GPT(GPT4o):
     """
     Simple interface for interacting with GPT-4O model
     """
+
     VERSIONS = {
         "4v": "gpt-4-vision-preview",
         "4o": "gpt-4o",
         "4o-mini": "gpt-4o-mini",
-        "gpt-4-turbo-2024-04-09":"gpt-4-turbo-2024-04-09"
+        "gpt-4-turbo-2024-04-09": "gpt-4-turbo-2024-04-09",
     }
+
     def __init__(
-            self,
-            api_key=None,
-            version="4o",
+        self,
+        api_key=None,
+        version="4o",
     ):
-    # def __init__(self, '
-        MODEL="gpt-4-turbo-2024-04-09"
-        REGION="eastus2"
-        super().__init__(MODEL,REGION)
+        # def __init__(self, '
+        MODEL = "gpt-4-turbo-2024-04-09"
+        REGION = "eastus2"
+        super().__init__(MODEL, REGION)
         self.version = MODEL
 
     def __call__(self, payload, verbose=False):
@@ -43,7 +44,9 @@ class GPT(GPT4o):
         try:
             content = response.choices[0].message.content
         except:
-            print(f"Got error while querying GPT-{self.version} API! Response:\n\n{response}")
+            print(
+                f"Got error while querying GPT-{self.version} API! Response:\n\n{response}"
+            )
             return None
 
         if verbose:
@@ -51,44 +54,28 @@ class GPT(GPT4o):
 
         return content
 
-    def get_payload(self,prompting_text_system,prompting_text_user):
-        text_dict_system = {
-            "type": "text",
-            "text": prompting_text_system
-        }
+    def get_payload(self, prompting_text_system, prompting_text_user):
+        text_dict_system = {"type": "text", "text": prompting_text_system}
         content_system = [text_dict_system]
-                
-        content_user = [
-            {
-                "type": "text",
-                "text": prompting_text_user
-            }
-        ]
+
+        content_user = [{"type": "text", "text": prompting_text_user}]
 
         object_caption_payload = {
             "model": "gpt-4-turbo-2024-04-09",
             "messages": [
-                {
-                    "role": "system",
-                    "content": content_system
-                },
-                {
-                    "role": "user",
-                    "content": content_user
-                }
+                {"role": "system", "content": content_system},
+                {"role": "user", "content": content_user},
             ],
             "temperature": 0,
-            "max_tokens": 500
+            "max_tokens": 500,
         }
         return object_caption_payload
 
 
+# 'on_floor', 'flush_wall', 'against_wall', 'spaced_wall', 'hanging', 'side_against_wall',
 
-# 'on_floor', 'flush_wall', 'against_wall', 'spaced_wall', 'hanging', 'side_against_wall', 
-
-# 'ontop', 'on', 
+# 'ontop', 'on',
 # 'front_against', 'front_to_front', 'leftright_leftright', 'side_by_side', 'back_to_back']
-
 
 
 ### 1. get big object, count, and relation
@@ -125,7 +112,7 @@ Object against the wall: [bed, wardrobe, nightstand]
 Relation between big objects: [nightstand, bed, side_by_side], [bench, bed, front_to_front]
 
 """
-prompting_text_user=f"""
+prompting_text_user = f"""
 Here is the roomtype you need to design:
 Roomtype: Bookstore
 
@@ -139,9 +126,6 @@ Here is your response:
 # # Category list of big objects: [1 checkout counter, 5 bookshelves, 2 reading tables, 8 chairs]
 # # Object against the wall: [bookshelves]
 # # Relation between big objects: [chair, reading table, front_against]
-
-
-
 
 
 #### 2. get small object and relation
@@ -170,7 +154,7 @@ List of small furniture: [book, plant, lamp, clothes]
 Relation: [book, nightstand, on, 2], [plant, nightstand, ontop, 1], [lamp, nightstand, ontop, 1], [clothes, bench, ontop, 2], [clothes, wardrobe, on, 4]
 
 """
-prompting_text_user=f"""
+prompting_text_user = f"""
 Here is the roomtype you need to design:
 Roomtype: Bookstore
 List of big furniture: [checkout counter, bookshelves, reading tables, chairs]
@@ -183,7 +167,7 @@ Here is your response:
 # gpt_text_response = gpt(payload=prompt_payload, verbose=True)
 # print(gpt_text_response)
 # # List of small furniture: [books, bookmarks, lamps, reading glasses, cash register, decorative items]
-# # Relation: 
+# # Relation:
 # # - [books, bookshelves, on, 50]
 # # - [books, reading tables, on, 5]
 # # - [bookmarks, bookshelves, on, 10]
@@ -192,9 +176,6 @@ Here is your response:
 # # - [cash register, checkout counter, ontop, 1]
 # # - [decorative items, checkout counter, ontop, 2]
 # # - [decorative items, bookshelves, ontop, 5]
-
-
-
 
 
 #### 3. get object class name in infinigen
@@ -219,7 +200,7 @@ Roomtype: Bedroom
 list of given category names: [bed, nightstand, lamp, wardrobe]
 Mapping results: {"bed": 'seating.BedFactory',"nightstand": 'shelves.SingleCabinetFactory',"lamp": 'lamp.DeskLampFactory','wardrobe': None}
 """
-prompting_text_user=f"""
+prompting_text_user = f"""
 Here is the roomtype you need to design:
 Roomtype: Bookstore
 List of given category names:  [checkout counter, bookshelves, reading tables, chairs]
@@ -248,7 +229,6 @@ Here is your response:
 # }
 
 
-
 # list of given category names: [books, bookmarks, lamps, reading glasses, cash register, decorative items]
 # 1-to-many:
 # Mapping results: {
@@ -268,7 +248,6 @@ Here is your response:
 #     "cash register": None,
 #     "decorative items": None
 # }
-
 
 
 #### 4. generate rule code
@@ -339,7 +318,7 @@ constraints["bedroom"] = bedrooms.all(
 
 
 """
-prompting_text_user="""
+prompting_text_user = """
 *Here is the roomtype and object info:*
 
 Roomtype: Bookstore
@@ -378,16 +357,18 @@ lamps_obj = furniture[lamp.DeskLampFactory]
 """
 
 gpt = GPT()
-prompt_payload = gpt.get_payload(prompting_text_system,prompting_text_user)
+prompt_payload = gpt.get_payload(prompting_text_system, prompting_text_user)
 gpt_text_response = gpt(payload=prompt_payload, verbose=True)
 print(gpt_text_response)
 
 
-import re
 import json
+import re
+
+
 def extract_json(input_string):
     # Using regex to identify the JSON structure in the string
-    json_match = re.search(r'{.*}', input_string, re.DOTALL)
+    json_match = re.search(r"{.*}", input_string, re.DOTALL)
     if json_match:
         extracted_json = json_match.group(0)
         try:
@@ -405,7 +386,6 @@ def extract_json(input_string):
 
 
 # print(prompt)
-
 
 
 """

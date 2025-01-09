@@ -2,6 +2,7 @@
 # This source code is licensed under the BSD 3-Clause license found in the LICENSE file in the root directory of this source tree.
 
 import math
+import random
 
 import bmesh
 
@@ -10,6 +11,10 @@ import bpy
 import numpy as np
 from numpy.random import uniform
 
+import GPT
+# import GPT.retrieve
+from GPT.constants import OBJATHOR_ASSETS_DIR
+# from GPT.retrieve import ObjectRetriever
 from infinigen.assets.material_assignments import AssetList
 from infinigen.assets.materials import text
 from infinigen.assets.utils.decorate import read_co, write_attribute, write_co
@@ -53,8 +58,6 @@ class BookFactory(AssetFactory):
         fn = self.make_paperback if self.is_paperback else self.make_hardcover
         # noinspection PyArgumentList
         obj = fn(width, height, depth)
-        import pdb
-        pdb.set_trace()
 
         return obj
 
@@ -220,6 +223,7 @@ class BookStackFactory(AssetFactory):
             self.max_angle = uniform(np.pi / 9, np.pi / 6) if uniform() < 0.7 else 0
             self.max_rel_scale = max(f.rel_scale for f in self.base_factories)
             self.max_skewness = max(f.skewness for f in self.base_factories)
+        self.retriever = GPT.Retriever
 
     def create_placeholder(self, **kwargs) -> bpy.types.Object:
         x_lo = -0.15 * self.max_rel_scale / 2
@@ -233,6 +237,14 @@ class BookStackFactory(AssetFactory):
         x_3, y_3 = rotate(theta, x_hi, y_lo)
         x_4, y_4 = rotate(theta, x_hi, y_hi)
 
+        self.placeholder_size_x = (
+            max(max([x_1, x_2, x_3, x_4]), x_hi) - min(min([x_1, x_2, x_3, x_4]), x_lo)
+        ) / 2
+        self.placeholder_size_y = (
+            max(max([y_1, y_2, y_3, y_4]), y_hi) - min(min([y_1, y_2, y_3, y_4]), y_lo)
+        ) / 2
+        self.placeholder_size_z = 0.02 * self.max_rel_scale * 0.8
+
         return new_bbox(
             min(min([x_1, x_2, x_3, x_4]), x_lo),
             max(max([x_1, x_2, x_3, x_4]), x_hi),
@@ -242,16 +254,44 @@ class BookStackFactory(AssetFactory):
             self.n_books * 0.02 * self.max_rel_scale * 0.8,
         )
 
-    def create_asset(self, **params) -> bpy.types.Object:
-        books = []
-        offset = 0
-        for i in range(self.n_books):
-            factory = np.random.choice(self.base_factories)
-            obj = factory.create_asset(i=i)
-            c = center(obj)[:-1]
-            obj.location = -c[0], -c[1], offset - np.min(read_co(obj)[:, -1])
-            obj.rotation_euler[-1] = uniform(-self.max_angle, self.max_angle)
-            butil.apply_transform(obj, True)
-            offset = np.max(read_co(obj)[:, -1])
-            books.append(obj)
-        return join_objects(books)
+    def create_asset(self, placeholder, **params) -> bpy.types.Object:
+        from ..objaverse.load_asset import load_pickled_3d_asset
+
+        cat = "book stack"
+        object_names = self.retriever.retrieve_object_by_cat(cat)
+        object_names = [name for name, score in object_names if score > 30]
+        random.shuffle(object_names)
+
+        for obj_name in object_names:
+            basedir = OBJATHOR_ASSETS_DIR
+            # indir = f"{basedir}/processed_2023_09_23_combine_scale"
+            filename = f"{basedir}/{obj_name}/{obj_name}.pkl.gz"
+            try:
+                obj = load_pickled_3d_asset(filename)
+                break
+            except:
+                continue
+
+        # scale = np.min(
+        #     np.array(
+        #         [
+        #             self.placeholder_size_x,
+        #             self.placeholder_size_y,
+        #             self.placeholder_size_z,
+        #         ]
+        #     )
+        #     / np.max(np.abs(np.array(obj.bound_box)), 0)
+        # )
+        # obj.scale = [scale] * 3
+
+        # scale = np.array(
+        #             [
+        #                 min(1,self.placeholder_size_x/obj.dimensions[0]),
+        #                 min(1,self.placeholder_size_y/obj.dimensions[1]),
+        #                 min(1,self.placeholder_size_z/obj.dimensions[2]),
+        #             ]
+        #         )
+        
+        # obj.scale = scale
+
+        return obj

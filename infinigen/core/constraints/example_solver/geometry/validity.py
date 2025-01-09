@@ -79,8 +79,8 @@ def all_relations_valid(state, name):
                 res = stable_against(state, name, relation_state)
                 # import pdb
                 # pdb.set_trace()
-                
-                if res!=True:
+
+                if res != True:
                     logger.debug(
                         f"{name} failed relation {i=}/{len(rels)} {relation_state.relation} on {relation_state.target_name}"
                     )

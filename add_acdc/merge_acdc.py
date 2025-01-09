@@ -1,10 +1,9 @@
 import json
+import math
 import random
 
 import bpy
 from mathutils import Matrix
-import math
-
 
 basic_object = {
     "active": True,
@@ -48,7 +47,9 @@ basic_object = {
 
 
 def load_infinigen_scene(scene_name):
-    blend_file_path=f"/home/yandan/workspace/infinigen/outputs/indoors/{scene_name}/scene.blend"
+    blend_file_path = (
+        f"/home/yandan/workspace/infinigen/outputs/indoors/{scene_name}/scene.blend"
+    )
     bpy.ops.wm.open_mainfile(filepath=blend_file_path)
     bpy.context.view_layer.update()
     return
@@ -93,8 +94,7 @@ def get_obj_from_collection(collection_name, obj_name):
         return collection.objects[obj_name]
 
 
-def remove_scaling(matrix_world,rot=180):
-
+def remove_scaling(matrix_world, rot=180):
     # Extract translation (last column)
     translation = matrix_world.to_translation()
 
@@ -102,12 +102,11 @@ def remove_scaling(matrix_world,rot=180):
     rotation_matrix = matrix_world.to_3x3()
     rotation_matrix.normalize()
 
-    #add angle
-    euler_angles = rotation_matrix.to_euler('XYZ')
+    # add angle
+    euler_angles = rotation_matrix.to_euler("XYZ")
     euler_angles.z += math.radians(rot)
     # Convert the adjusted Euler angles back to a rotation matrix
     rotation_matrix = euler_angles.to_matrix()
-
 
     # Reconstruct a 4x4 matrix with translation and normalized rotation
     new_matrix_world = Matrix.Translation(translation) @ rotation_matrix.to_4x4()
@@ -115,8 +114,11 @@ def remove_scaling(matrix_world,rot=180):
     # Assign the modified matrix back to the object
     return new_matrix_world
 
+
 def transform_acdc(
-    source_name="desk_0", target_name="SimpleDeskFactory(8569017).spawn_asset(5056988)",additional_rot=0
+    source_name="desk_0",
+    target_name="SimpleDeskFactory(8569017).spawn_asset(5056988)",
+    additional_rot=0,
 ):
     source_obj = get_obj_from_collection("CollectionACDC", source_name)
 
@@ -125,7 +127,7 @@ def transform_acdc(
     M_source = source_obj.matrix_world.copy()
     M_target = target_obj.matrix_world.copy()
 
-    M_source_noscale = remove_scaling(M_source,additional_rot)
+    M_source_noscale = remove_scaling(M_source, additional_rot)
 
     collection = bpy.data.collections["CollectionACDC"]
     # 遍历集合中的对象
@@ -133,7 +135,7 @@ def transform_acdc(
         # 确保对象不是隐藏的
         if obj.hide_viewport:
             continue
-        if obj.name==source_name:
+        if obj.name == source_name:
             bpy.data.objects.remove(obj)
             continue
         obj.matrix_world = M_target @ M_source_noscale.inverted() @ obj.matrix_world
@@ -142,10 +144,8 @@ def transform_acdc(
     return target_obj
 
 
-def remove_children(target_name,scene_name):
-    json_path = (
-        f"/home/yandan/workspace/infinigen/outputs/indoors/{scene_name}/solve_state.json"
-    )
+def remove_children(target_name, scene_name):
+    json_path = f"/home/yandan/workspace/infinigen/outputs/indoors/{scene_name}/solve_state.json"
     with open(json_path, "r") as f:
         j = json.load(f)
 
@@ -204,7 +204,9 @@ def update_solve_state(target_key):
 
 
 def save_blend_file(scene_name):
-    blend_file_path=f"/home/yandan/workspace/infinigen/outputs/indoors/{scene_name}/scene_new.blend"
+    blend_file_path = (
+        f"/home/yandan/workspace/infinigen/outputs/indoors/{scene_name}/scene_new.blend"
+    )
     bpy.ops.wm.save_as_mainfile(filepath=blend_file_path)
 
     return
@@ -215,7 +217,7 @@ if __name__ == "__main__":
     scene_idx = 1
 
     scene_name = "debug_book"
-    acdc_file_path="/home/yandan/Desktop/acdc_objaverse/acdc_output-desk6/step_3_output/scene_1/scene_1.blend"
+    acdc_file_path = "/home/yandan/Desktop/acdc_objaverse/acdc_output-desk6/step_3_output/scene_1/scene_1.blend"
     target_name = "SimpleDeskFactory(1487939).spawn_asset(1733853)"
     additional_rot = 0
 
@@ -235,7 +237,7 @@ if __name__ == "__main__":
     load_acdc_scene(acdc_file_path)
 
     source_name = "desk_0"
-    target_key = remove_children(target_name,scene_name)
+    target_key = remove_children(target_name, scene_name)
     target_obj = transform_acdc(source_name, target_name, additional_rot)
     update_solve_state(target_key)
 
