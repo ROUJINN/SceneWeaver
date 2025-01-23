@@ -43,6 +43,20 @@ def stable_against_matrix(point, normal):
     return restriction_matrix
 
 
+# def combined_stability_matrix(parent_planes):
+#     """
+#     Given a list of relations (each a tuple of point and normal),
+#     compute the combined 3x3 matrix M.
+#     """
+
+#     M = np.identity(3)
+#     for name, poly in parent_planes:
+#         obj = bpy.data.objects[name]
+#         poly = obj.data.polygons[poly]
+#         point = obj.data.vertices[poly.vertices[0]]
+#         M = np.dot(M, stable_against_matrix(point, poly.normal))
+#     return M
+
 def combined_stability_matrix(parent_planes):
     """
     Given a list of relations (each a tuple of point and normal),
@@ -50,11 +64,15 @@ def combined_stability_matrix(parent_planes):
     """
 
     M = np.identity(3)
+    # import pdb
+    # pdb.set_trace()
     for name, poly in parent_planes:
         obj = bpy.data.objects[name]
         poly = obj.data.polygons[poly]
+        poly_normal = iu.global_polygon_normal(obj, poly)
         point = obj.data.vertices[poly.vertices[0]]
-        M = np.dot(M, stable_against_matrix(point, poly.normal))
+        # M = np.dot(M, stable_against_matrix(point, poly.normal))
+        M = np.dot(M, stable_against_matrix(point, poly_normal))
     return M
 
 
@@ -309,7 +327,7 @@ def apply_relations_surfacesample(
                 f"Got {relation_state.relation} for {name=} {relation_state.target_name=}"
             )
         # 获取父对象
-        parent_obj = state.objs[relation_state.target_name].obj
+        parent_obj = state.objs[relation_state.target_name].obj 
         # print(parent_obj)
         # 获取对象和平面关系状态
         obj_plane, parent_plane = state.planes.get_rel_state_planes(
@@ -414,9 +432,11 @@ def apply_relations_surfacesample(
             [p1_to_p1.buffer(1e-1).contains(Point(pt[0], pt[1])) for pt in projected]
         ) and (not isinstance(relation2, cl.CoPlanar)):
             face_mask = tagging.tagged_face_mask(parent_obj2, parent_tags2)
-            stability.move_obj_random_pt(
-                state, obj_name, parent_obj2.name, face_mask, parent_plane2
-            )  # 随机移动对象 location
+            if not use_initial:
+                stability.move_obj_random_pt(
+                    state, obj_name, parent_obj2.name, face_mask, parent_plane2
+                )  # 随机移动对象 location
+                
             stability.snap_against(
                 state.trimesh_scene,
                 obj_name,
@@ -437,9 +457,11 @@ def apply_relations_surfacesample(
             )
         else:
             face_mask = tagging.tagged_face_mask(parent_obj1, parent_tags1)
-            stability.move_obj_random_pt(
-                state, obj_name, parent_obj1.name, face_mask, parent_plane1
-            )  # 随机移动对象
+            if not use_initial:
+                stability.move_obj_random_pt(
+                    state, obj_name, parent_obj1.name, face_mask, parent_plane1
+                )  # 随机移动对象
+            
             stability.snap_against(
                 state.trimesh_scene,
                 obj_name,

@@ -119,7 +119,7 @@ x=dict2str(big_category_dict)
 
 gpt = gpt()
 
-roomtype = "Living Room"
+roomtype = "Classroom"
 results = dict()
 
 ### 1. get big object, count, and relation
@@ -157,14 +157,18 @@ user_prompt = prompts.step_5_position_prompt_user.format(big_category_dict=big_c
                                                            relation_big_object = relation_big_object_str,
                                                            roomtype=roomtype,
                                                            roomsize=roomsize_str)
-
 prompt_payload = gpt.get_payload(prompts.step_5_position_prompt_system, user_prompt)
-gpt_text_response = gpt(payload=prompt_payload, verbose=True)
-print(gpt_text_response)
+success = False
+while not success:
+    gpt_text_response = gpt(payload=prompt_payload, verbose=True)
+    print(gpt_text_response)
 
-# gpt_text_response = '{\n    "Roomtype": "Bookstore",\n    "list of given category names": ["sofa", "armchair", "coffee table", "TV stand", "large shelf", "side table", "floor lamp", "remote control", "book", "magazine", "decorative bowl", "photo frame", "vase", "candle", "coaster", "plant"],\n    "Mapping results": {\n        "sofa": "seating.SofaFactory",\n        "armchair": "seating.ArmChairFactory",\n        "coffee table": "tables.CoffeeTableFactory",\n        "TV stand": "shelves.TVStandFactory",\n        "large shelf": "shelves.LargeShelfFactory",\n        "side table": "tables.SideTableFactory",\n        "floor lamp": "lamp.FloorLampFactory",\n        "remote control": null,\n        "book": "table_decorations.BookStackFactory",\n        "magazine": null,\n        "decorative bowl": "tableware.BowlFactory",\n        "photo frame": null,\n        "vase": "table_decorations.VaseFactory",\n        "candle": null,\n        "coaster": null,\n        "plant": "tableware.PlantContainerFactory"\n    }\n}'
-
-gpt_dict_response = extract_json(gpt_text_response.replace("'","\"").replace("None", "null"))
+    # gpt_text_response = '{\n    "Roomtype": "Bookstore",\n    "list of given category names": ["sofa", "armchair", "coffee table", "TV stand", "large shelf", "side table", "floor lamp", "remote control", "book", "magazine", "decorative bowl", "photo frame", "vase", "candle", "coaster", "plant"],\n    "Mapping results": {\n        "sofa": "seating.SofaFactory",\n        "armchair": "seating.ArmChairFactory",\n        "coffee table": "tables.CoffeeTableFactory",\n        "TV stand": "shelves.TVStandFactory",\n        "large shelf": "shelves.LargeShelfFactory",\n        "side table": "tables.SideTableFactory",\n        "floor lamp": "lamp.FloorLampFactory",\n        "remote control": null,\n        "book": "table_decorations.BookStackFactory",\n        "magazine": null,\n        "decorative bowl": "tableware.BowlFactory",\n        "photo frame": null,\n        "vase": "table_decorations.VaseFactory",\n        "candle": null,\n        "coaster": null,\n        "plant": "tableware.PlantContainerFactory"\n    }\n}'
+    try:
+        gpt_dict_response = extract_json(gpt_text_response.replace("'","\"").replace("None", "null"))
+        success = True
+    except:
+        success = False
 Placement = gpt_dict_response["Placement"]
 
 

@@ -18,7 +18,7 @@ from .reassignment import pose_backup, restore_pose_backup
 
 import bpy
 from infinigen_examples.util.visible import invisible_others, visible_others
-
+from infinigen.core.constraints.example_solver.geometry.dof import combined_stability_matrix, combine_rotation_constraints, apply_relations_surfacesample
 logger = logging.getLogger(__name__)
 
 
@@ -59,33 +59,62 @@ class TranslateMove(moves.Move):
         (target_name,) = self.names
         restore_pose_backup(state, target_name, self._backup_pose)
 
-    def apply_gradient(self, state: State, expand_collision=False):
+    def apply_gradient(self, state: State, temperature=None , expand_collision=False):
         (target_name,) = self.names
 
         os = state.objs[target_name]
         
+        obj_state = state.objs[target_name]
+        parent_planes = apply_relations_surfacesample(state, target_name, use_initial=True)
+        obj_state.dof_matrix_translation = combined_stability_matrix(
+            parent_planes
+        )  # 平移自由度的合成约束矩阵。
+        obj_state.dof_rotation_axis = combine_rotation_constraints(
+            parent_planes
+        )  # 旋转自由度的约束轴或限制信息
         
 
-        if target_name=="6870354_ArmChairFactory":
+        if "FloorLampFactory" in target_name:
             a = 1
-        result = validity.check_post_move_validity(state, target_name, expand_collision=expand_collision, return_touch=True, use_initial=True)
+        result = validity.check_post_move_validity(state, target_name, 
+                                                   expand_collision=expand_collision, 
+                                                   return_touch=True, 
+                                                   use_initial=True)
+        
+        
         success, touch = result
+        
+        self._backup_pose = pose_backup(os, dof=False)
+
+        
         if touch is None:
-            # no collision
+            # relation invalid, have moved to make it valid
             return False
         if isinstance(touch.names[1], str):
             # no collision
             return False
-        self.translation = self.calc_gradient(state.trimesh_scene,state,target_name,touch)
+        if "FloorLampFactory" in target_name:
+            a = 1
+            TRANS_MULT = 8
+            TRANS_MIN = 0.01
+            var = max(TRANS_MIN, TRANS_MULT * temperature)
+            random_vector = np.random.normal(0, var, size=3)
+
+            self.translation = obj_state.dof_matrix_translation @ random_vector
+        else:
+            self.translation = self.calc_gradient(state.trimesh_scene,state,target_name,touch)
         iu.translate(state.trimesh_scene, os.obj.name, self.translation)
 
         self._backup_pose = pose_backup(os, dof=False)
 
         
-        invisible_others()
-        bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
-        visible_others()
-        return True
+        
+        # invisible_others()
+        # bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
+        # visible_others()
+
+        return success
+        
     
     def calc_gradient(self, scene, state, name, touch):
 
@@ -106,6 +135,8 @@ class TranslateMove(moves.Move):
                 b_names.append(b)
                 centroid_b_lst.append(centroid_b)
         centroid_b_mean = np.mean(centroid_b_lst, axis=0)
+        if 'FloorLampFactory' in name:
+            a = 1
 
         gradient = centroid_a - centroid_b_mean
         gradient_norm = np.linalg.norm(gradient)

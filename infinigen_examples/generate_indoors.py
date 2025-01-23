@@ -196,7 +196,7 @@ def compose_indoors(output_folder: Path, scene_seed: int, **overrides):
         )
         for i, vars in enumerate(assignments):
             solver.init_graph(
-                stages["on_floor"],
+                # stages["on_floor"],
                 var_assignments=vars,
             )
             # bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
@@ -328,8 +328,10 @@ def compose_indoors(output_folder: Path, scene_seed: int, **overrides):
             greedy.iterate_assignments(stages["side_obj"], state, all_vars, limits)
         ):
             solver.solve_objects(
-                consgraph, stages["side_obj"], vars, n_steps, desc=f"side_obj_{i}"
+                consgraph, stages["side_obj"], vars, n_steps, desc=f"side_obj_{i}",
+                expand_collision=True
             )
+        
         return solver.state
 
     state = p.run_stage("solve_medium", solve_medium, use_chance=False, default=state)

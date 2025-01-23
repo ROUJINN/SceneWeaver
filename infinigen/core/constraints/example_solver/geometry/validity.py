@@ -130,7 +130,8 @@ def check_post_move_validity(
             return False, None
         else:
             return False
-
+    if "FloorLampFactory" in name:
+        a = 1
     # check collision
     if disable_collision_checking:
         return True

@@ -48,6 +48,8 @@ from . import moves, propose_relations, state_def
 
 import importlib
 from infinigen.core import tags as t
+from infinigen_examples.util import constraint_util as cu
+from infinigen_examples.util.visible import invisible_others, visible_others
 
 logger = logging.getLogger(__name__)
 
@@ -244,7 +246,7 @@ class Solver:
         # ra = (
         #     trange(n_steps) if self.optim.print_report_freq == 0 else range(n_steps)
         # )  # range(0, 150)
-        ra = trange(n_steps) if self.optim.print_report_freq == 0 else range(n_steps*2)
+        ra = trange(n_steps) if self.optim.print_report_freq == 0 else range(n_steps)
 
         # 进行迭代
         for j in ra:
@@ -252,14 +254,22 @@ class Solver:
             # if j==6:
 
             move_gen = self.choose_move_type(j, n_steps)  # 选择移动类型
-            while move_gen.__name__ != "propose_translate":
-                move_gen = self.choose_move_type(j, n_steps)  # 选择移动类型
+            while move_gen.__name__ != "propose_translate" :#move_gen.__name__ != "propose_translate" and :
+                move_gen = self.choose_move_type(j, n_steps) 
+            # if desc == "on_floor_0":
+            #     while move_gen.__name__ != "propose_translate" :#move_gen.__name__ != "propose_translate" and :
+            #         move_gen = self.choose_move_type(j, n_steps)  # 选择移动类型
+            # else:
+            #     while move_gen.__name__ != "propose_relation_plane_change" :#move_gen.__name__ != "propose_translate" and :
+            #         move_gen = self.choose_move_type(j, n_steps)  # 选择移动类型
             # print(move_gen , "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
             self.optim.step(
                 consgraph, self.state, move_gen, filter_domain, expand_collision
             )  # MARK # 执行优化步骤
-            # bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
-
+            invisible_others()
+            bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
+            visible_others()
+            
         self.optim.save_stats(
             self.output_folder / f"optim_{desc}.csv"
         )  # 保存优化统计信息
@@ -289,11 +299,11 @@ class Solver:
             greedy.set_active(self.state, k, True)
 
         return self.state
-
+    
     @gin.configurable
     def init_graph(
         self,
-        filter_domain: r.Domain,
+        # filter_domain: r.Domain,
         var_assignments: dict[str, str],
     ):
         name_mapping = {
@@ -324,7 +334,7 @@ class Solver:
                         },
                         "CoffeeTable": {"1": {"position": [2.5, 3.5], "rotation": 0}},
                         "TVStand": {"1": {"position": [2.5, 6.5], "rotation": 270}},
-                        "TV": {"1": {"position": [2.5, 6.25], "rotation": 270}},
+                        # "TV": {"1": {"position": [2.5, 6.25], "rotation": 270}},
                         # "BookColumn": {
                         #     "1": {"position": [0.5, 6.5], "rotation": 270},
                         #     "2": {"position": [4.5, 6.5], "rotation": 270}
@@ -340,13 +350,43 @@ class Solver:
                         }
                     }
         
+        category_against_wall = [
+                                    "TVStand",
+                                    "TV",
+                                    "LargeShelf",
+                                    "BookColumn",
+                                    # "Sofa",
+                                    # "ArmChair"
+                                ]
+        
+
         dom_assignments = {
             k: r.Domain(self.state.objs[objkey].tags)
             for k, objkey in var_assignments.items()
         }
-        filter_domain = r.substitute_all(filter_domain, dom_assignments)
+        filter_domains = dict()
 
+        stages_local = get_stages()
+        filter_domains["on_floor"] = r.substitute_all(stages_local["on_floor"], dom_assignments)
+        filter_domains["on_floor_against_wall"] = r.substitute_all(stages_local["on_floor_against_wall"], dom_assignments)
+        
         for key, value in info_dict.items():
+            
+            if key in category_against_wall:
+                filter_domain = filter_domains["on_floor_against_wall"]
+            else:
+                filter_domain = filter_domains["on_floor"]
+
+            if key == "FloorLamp" :
+                var_assignments = {cu.variable_room: 'newroom_0-0',
+                                   cu.variable_obj: '1351066_SofaFactory'}
+                dom_assignments = {
+                    k: r.Domain(self.state.objs[objkey].tags)
+                    for k, objkey in var_assignments.items()
+                }
+                stage = stages_local["side_by_side_sofa"]
+                filter_domain = r.substitute_all(stage, dom_assignments)
+
             for num in value.keys():
                 position = value[num]["position"] + [0]
                 rotation = value[num]["rotation"] * math.pi / 180
@@ -384,10 +424,51 @@ class Solver:
                     move.apply_init(
                         self.state, target_name, size, position, rotation, gen_class, meshpath
                     )
-                    break
 
+                    info_dict[key][num]["name"] = move.names[0]
+                    # invisible_others()
+                    # bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
+                    # visible_others()
+                    break
+        # save_path = "debug.blend"
+        # bpy.ops.wm.save_as_mainfile(filepath=save_path)
         return self.state
 
     def get_bpy_objects(self, domain: r.Domain) -> list[bpy.types.Object]:
         objkeys = domain_contains.objkeys_in_dom(domain, self.state)
         return [self.state.objs[k].obj for k in objkeys]
+
+
+def get_stages():
+   
+
+    on_floor = cl.StableAgainst({}, cu.floortags)
+
+    all_room = r.Domain({t.Semantics.Room, -t.Semantics.Object})
+    all_obj = r.Domain({t.Semantics.Object, -t.Semantics.Room})
+
+    all_obj_in_room = all_obj.with_relation(
+        cl.AnyRelation(), all_room.with_tags(cu.variable_room)
+    )
+    primary = all_obj_in_room.with_relation(-cl.AnyRelation(), all_obj)
+
+    greedy_stages = {}
+    greedy_stages["on_floor"] = primary.with_relation(on_floor, all_room)
+    greedy_stages["on_floor_against_wall"] = (
+        primary.with_relation(on_floor, all_room)
+        .with_relation(cu.against_wall, all_room)
+    )
+
+    secondary = all_obj.with_relation(
+        cl.AnyRelation(), primary.with_tags(cu.variable_obj)
+    )
+    sofa_domain = r.Domain(usage_lookup.usages_of_factory(seating.SofaFactory) )
+    greedy_stages["side_by_side_sofa"] = secondary.with_relation(cu.leftright_leftright, sofa_domain).with_relation(on_floor, all_room)
+
+    # greedy_stages["obj_ontop_obj"] = nonside.with_relation(
+    #     cu.ontop, all_obj
+    # ).with_relation(-cu.on, all_obj)
+    # greedy_stages["obj_on_support"] = nonside.with_relation(
+    #     cu.on, all_obj
+    # ).with_relation(-cu.ontop, all_obj)
+    return greedy_stages

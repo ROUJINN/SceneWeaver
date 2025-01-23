@@ -58,7 +58,7 @@ def project_and_align_z_with_x(polygons, z_direction):
     return rotated_polygons
 
 
-def is_vertically_contained(poly_a, poly_b):
+def is_vertically_contained(poly_a, poly_b, return_diff=False):
     """
     Check if polygon A is vertically contained within polygon B, ignoring X-axis spillover.
 
@@ -75,8 +75,13 @@ def is_vertically_contained(poly_a, poly_b):
     # Check vertical containment along the Y-axis
     min_a, max_a = min(y_coords_a), max(y_coords_a)
     min_b, max_b = min(y_coords_b), max(y_coords_b)
-
-    return min_b <= min_a and max_a <= max_b
+    
+    is_contained = min_b <= min_a and max_a <= max_b
+    if return_diff:
+        vertical_diff = (min_b + max_b)/2 - (min_a + max_a)/2
+        return is_contained, vertical_diff
+    else:
+        return is_contained
 
 
 def project_vector(vector, origin, normal):
@@ -140,6 +145,8 @@ def  stable_against(
     )
 
     scene = state.trimesh_scene
+    
+
     a_trimesh = iu.meshes_from_names(scene, sa.obj.name)[0]
     b_trimesh = iu.meshes_from_names(scene, sb.obj.name)[0]
 
@@ -162,10 +169,11 @@ def  stable_against(
         res = projected_a.overlaps(projected_b)
     elif relation.check_z:
         res = projected_a.within(projected_b.buffer(1e-2))
+        # if (use_initial and not res) or (sa.dof_matrix_translation is not None and sa.obj.name=='FloorLampFactory(8520374).bbox_placeholder(3326486)' and not res):
         if use_initial and not res:
             move_vectors = []
-            veritces = list(np.array(projected_a.exterior.coords))
-            for point in veritces:
+            vertices = list(np.array(projected_a.exterior.coords))
+            for point in vertices:
                 p = Point(point)
                 if projected_b.contains(p):
                     continue
@@ -173,19 +181,31 @@ def  stable_against(
                 move_vector = [closest_point.x - p.x, closest_point.y - p.y]
                 move_vectors.append(np.array(move_vector)[None,:]/np.linalg.norm(np.array(move_vector)))
                 
-            gradient = np.sum(np.concatenate(move_vectors, axis=0), axis=0)
-            gradient = [gradient[0],gradient[1],0]
+            gradient = np.mean(np.concatenate(move_vectors, axis=0), axis=0)
+            gradient = anti_project_to_3d(gradient,normal_b)
+            # gradient = [gradient[0],gradient[1],0]
             TRANS_MULT = 0.1
             translation = TRANS_MULT * sa.dof_matrix_translation @ gradient
             iu.translate(state.trimesh_scene, sa.obj.name, translation)
             
 
     else:
+        if obj_name=='6569851_FloorLampFactory':
+            a = 1
         z_proj = project_vector(np.array([0, 0, 1]), origin_b, normal_b)
         projected_a_rotated, projected_b_rotated = project_and_align_z_with_x(
             [projected_a, projected_b], z_proj
         )
-        res = is_vertically_contained(projected_a_rotated, projected_b_rotated)
+        res,vertical_diff = is_vertically_contained(projected_a_rotated, projected_b_rotated, return_diff=True)
+        if use_initial and not res:
+            tangent_1 = [0, 0, 1]
+            tangent_2 = np.cross(normal_b, tangent_1)
+            tangent_2 = tangent_2 / np.linalg.norm(tangent_2)
+            gradient = vertical_diff * tangent_2
+            
+            TRANS_MULT = 0.1
+            translation = TRANS_MULT * sa.dof_matrix_translation @ gradient
+            iu.translate(state.trimesh_scene, sa.obj.name, translation)
 
 
     if visualize:
@@ -209,6 +229,30 @@ def  stable_against(
             return False
 
     return True
+
+def anti_project_to_3d(point_2D,normal_b,origin_b=[0,0,0]):
+   
+    normal_b = np.array(normal_b)
+    # Find two vectors that lie on the plane, perpendicular to the normal vector
+    # Using cross products to find perpendicular vectors
+    # tangent_1 = np.cross(normal_b, [1, 0, 0]) if normal_b[0] != 0 else np.cross(normal_b, [0, -1, 0])
+    if normal_b[1] not in [1,-1]:
+        tangent_1 = np.cross(normal_b, [0, -1, 0])
+    elif normal_b[1] not in [1,-1]:
+        tangent_1 = np.cross(normal_b, [0, 1, 0])
+    # else:
+
+    # tangent_1 = np.cross(normal_b, [1, 0, 0]) if normal_b != [1,0,0] else np.cross(normal_b, [0, -1, 0])
+    tangent_1 = tangent_1 / np.linalg.norm(tangent_1)
+
+    # Find another tangent vector
+    tangent_2 = np.cross(normal_b, tangent_1)
+    tangent_2 = tangent_2 / np.linalg.norm(tangent_2)
+
+    # Now you can reconstruct the 3D point corresponding to the 2D point
+    point_3D = origin_b + point_2D[0] * tangent_1 + point_2D[1] * tangent_2
+
+    return point_3D
 
 
 def snap_against(scene, a, b, a_plane, b_plane, margin=0, rev_normal=False):

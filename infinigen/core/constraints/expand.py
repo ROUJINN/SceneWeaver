@@ -89,7 +89,7 @@ def expand_mesh(geom, name):
     scaling_factor_side = (
         ((right - left) * scale[1] + d_side) / scale[1] / (right - left)
     )
-    print(name, scaling_factor_front, scaling_factor_back, scaling_factor_side)
+    # print(name, scaling_factor_front, scaling_factor_back, scaling_factor_side)
 
     scale_matrix = np.eye(3)
 

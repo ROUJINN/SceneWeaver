@@ -83,8 +83,8 @@ front_against = cl.StableAgainst(
 
 front_to_front = cl.StableAgainst(front, front, margin=0.05, check_z=False)
 
-leftright_leftright = cl.StableAgainst(leftright, leftright, margin=0.05)  # YYD 0.5
-side_by_side = cl.StableAgainst(side, side)
+leftright_leftright = cl.StableAgainst(leftright, leftright, margin=0.05, check_z=False)  # YYD 0.5
+side_by_side = cl.StableAgainst(side, side, check_z=False)
 back_to_back = cl.StableAgainst(back, back)
 
 variable_room = t.Variable("room")
