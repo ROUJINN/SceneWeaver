@@ -7,7 +7,7 @@ You will receive:
 1. The roomtype you need to design.
 
 You need to return a dict including:
-1. Room size, including width and height in meters.
+1. Room size, including width and height in meters. Make the room a little bit bigger than the regular size.
 2. A list of large-furniture categories that stand on the floor, marked with count. 
 You can refer but not limited to this category list: ['BeverageFridge', 'Dishwasher', 'Microwave', 'Oven', 'Monitor', 'TV', 'BathroomSink', 'StandingSink', 'Bathtub', 'Hardware', 'Toilet', 'AquariumTank', 'DoorCasing', 'GlassPanelDoor', 'LiteDoor', 'LouverDoor', 'PanelDoor', 'NatureShelfTrinkets', 'Pillar', 'CantileverStaircase', 'CurvedStaircase', 'LShapedStaircase', 'SpiralStaircase', 'StraightStaircase', 'UShapedStaircase', 'Pallet', 'Rack', 'CeilingClassicLamp', 'CeilingLight', 'DeskLamp', 'FloorLamp', 'Lamp', 'Bed', 'BedFrame', 'BarChair', 'Chair', 'OfficeChair', 'Mattress', 'Pillow', 'ArmChair', 'Sofa', 'CellShelf', 'TVStand', 'Countertop', 'KitchenCabinet', 'KitchenIsland', 'KitchenSpace', 'LargeShelf', 'SimpleBookcase', 'SidetableDesk', 'SimpleDesk', 'SingleCabinet', 'TriangleShelf', 'BookColumn', 'BookStack', 'Sink', 'Tap', 'Vase', 'TableCocktail', 'CoffeeTable', 'SideTable', 'TableDining', 'TableTop', 'Bottle', 'Bowl', 'Can', 'Chopsticks', 'Cup', 'FoodBag', 'FoodBox', 'Fork', 'Spatula', 'FruitContainer', 'Jar', 'Knife', 'Lid', 'Pan', 'LargePlantContainer', 'PlantContainer', 'Plate', 'Pot', 'Spoon', 'Wineglass', 'Balloon', 'RangeHood', 'Mirror', 'WallArt', 'WallShelf']
 Do not return objects like rug. 
@@ -253,7 +253,7 @@ wallfurn = furniture.related_to(rooms, cu.against_wall)
 """
 
 
-#### 5.generate position
+#### 5.generate position & size
 
 step_5_position_prompt_system = """
 You are an experienced layout designer to design a 3D scene. 
@@ -274,7 +274,9 @@ You will receive:
 5. Relation between different furniture categories. 
 
 You need to return a dict including:
-1. X-Y Position and Z rotation of each furniture.
+1. X-Y Position and Z rotation of each furniture. Make the layout more sparse and comfortable for people to move around.
+2. The initial size of furniture in (x_dim, y_dim, z_dim) when they face to the positive X axis, which means (depth, width, height). For example, size for cabinet can be (0.5,0.5,1) and size for sofa can be (0.8,2,1).
+3. Related object that each object belongs to or has relation with.
 
 Here is the example: 
 {
@@ -283,10 +285,10 @@ Here is the example:
     "Category list of big object": {"bed":"1", "wardrobe":"1", "nightstand":"2", "bench":"1"},
     "Object against the wall": ["bed", "wardrobe", "nightstand"],
     "Relation between big objects": [["nightstand", "bed", "side_by_side"], ["bench", "bed", "front_to_front"]],
-    "Placement": {"bed": {"1": {"position": [1,1.5], "rotation": 0}}, 
-                    "wardrobe": {"1": {"position": [1,3.5], "rotation": 270}}, 
-                    "nightstand": {"1": {"position": [0.25,0.25], "rotation": 0}, "2": {"position": [0.25,2.75], "rotation": 0}}, 
-                      "bench": {"1": {"position": [2.25,1.5], "rotation": 180}}}
+    "Placement": {"bed": {"1": {"position": [1,1.5], "rotation": 0, "size": [2,2,0.6]}}, 
+                    "wardrobe": {"1": {"position": [1,3.5], "rotation": 270, "size": [0.5,2,2]}}, 
+                    "nightstand": {"1": {"position": [0.25,0.25], "size": [0.5,0.5,0.6], "rotation": 0, "parent":["bed","1", "side_by_side"] }, "2": {"position": [0.25,2.75], "rotation": 0, "size": [0.5,0.5,0.6], "parent":["bed","1","side_by_side"]}}, 
+                      "bench": {"1": {"position": [2.25,1.5], "rotation": 180, "size": [0.5,2,0.5], "parent":["bed","1","front_to_front"]}}}
 }
 
 """

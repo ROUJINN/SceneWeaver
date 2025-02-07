@@ -1,6 +1,6 @@
 ################## list all Semantics category #####################
 from infinigen.core.tags import Semantics
-
+import bpy
 semantic_member = list((Semantics.__members__).values())
 
 ################## list all object factory #####################

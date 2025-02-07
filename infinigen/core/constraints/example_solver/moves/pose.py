@@ -65,6 +65,8 @@ class TranslateMove(moves.Move):
         os = state.objs[target_name]
         
         obj_state = state.objs[target_name]
+        if target_name=="620454_LargeShelfFactory":
+            a = 1
         parent_planes = apply_relations_surfacesample(state, target_name, use_initial=True)
         obj_state.dof_matrix_translation = combined_stability_matrix(
             parent_planes
@@ -74,7 +76,7 @@ class TranslateMove(moves.Move):
         )  # 旋转自由度的约束轴或限制信息
         
 
-        if "FloorLampFactory" in target_name:
+        if "CoffeeTableFactory" in target_name and "Office" not in target_name:
             a = 1
         result = validity.check_post_move_validity(state, target_name, 
                                                    expand_collision=expand_collision, 
@@ -93,26 +95,22 @@ class TranslateMove(moves.Move):
         if isinstance(touch.names[1], str):
             # no collision
             return False
-        if "FloorLampFactory" in target_name:
-            a = 1
-            TRANS_MULT = 8
-            TRANS_MIN = 0.01
-            var = max(TRANS_MIN, TRANS_MULT * temperature)
-            random_vector = np.random.normal(0, var, size=3)
+        # if "ChairFactory" in target_name:
+        #     a = 1
+        #     TRANS_MULT = 8
+        #     TRANS_MIN = 0.01
+        #     var = max(TRANS_MIN, TRANS_MULT * temperature)
+        #     random_vector = np.random.normal(0, var, size=3)
 
-            self.translation = obj_state.dof_matrix_translation @ random_vector
-        else:
-            self.translation = self.calc_gradient(state.trimesh_scene,state,target_name,touch)
+        #     self.translation = obj_state.dof_matrix_translation @ random_vector
+        # else:
+        self.translation = self.calc_gradient(state.trimesh_scene,state,target_name,touch)
         iu.translate(state.trimesh_scene, os.obj.name, self.translation)
 
         self._backup_pose = pose_backup(os, dof=False)
-
-        
-        
         # invisible_others()
         # bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
         # visible_others()
-
         return success
         
     

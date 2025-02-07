@@ -195,14 +195,18 @@ def check_init_valid(
         return res
 
     # 获取第一个对象和目标的旋转信息，并执行旋转
+    
     a, b, rotation_axis, rotation_angle, plane_normal_b = get_rot(0)
     iu.rotate(state.trimesh_scene, a, rotation_axis, rotation_angle)
+    
     first_plane_normal = plane_normal_b  # Save the normal of the first plane
 
     dof_remaining = True  # Degree of freedom remaining after the first alignment
 
     # Check and apply rotations for subsequent planes
     # # 对后续平面进行检查和旋转
+    if name =="620454_LargeShelfFactory":
+        a = 1
     for i in range(1, len(obj_planes)):
         a, b, rotation_axis, rotation_angle, plane_normal_b = get_rot(i)  # z axies
 
@@ -210,7 +214,7 @@ def check_init_valid(
             # 如果不需要旋转，跳过当前平面
             logger.debug(f"no rotation needed for {i=} of {len(obj_planes)}")
             continue
-
+        
         rot_allowed = is_rotation_allowed(rotation_axis, first_plane_normal)
         if dof_remaining and rot_allowed:
             # 如果旋转允许，执行旋转
@@ -223,7 +227,7 @@ def check_init_valid(
                 f"dofs failed for {i=} of {len(obj_planes)=}, {rot_allowed=} {dof_remaining=}"
             )
             return False, None, None
-
+       
     # Construct the system of linear equations for translation
     # 构造线性方程组以计算平移
     A = []
@@ -295,7 +299,8 @@ def project(points, plane_normal):
 def apply_relations_surfacesample(
     state: state_def.State,
     name: str,
-    use_initial=False
+    use_initial=False,
+    closest_surface=False
 ):
     obj_state = state.objs[name]  # 获取指定对象的状态
     obj_name = obj_state.obj.name
@@ -327,13 +332,16 @@ def apply_relations_surfacesample(
                 f"Got {relation_state.relation} for {name=} {relation_state.target_name=}"
             )
         # 获取父对象
+        if relation_state.target_name!='newroom_0-0':
+            a =  1
         parent_obj = state.objs[relation_state.target_name].obj 
         # print(parent_obj)
         # 获取对象和平面关系状态
+        if name=="620454_LargeShelfFactory":
+            a = 1
         obj_plane, parent_plane = state.planes.get_rel_state_planes(
-            state, name, relation_state
+            state, name, relation_state, closest_surface=closest_surface
         )
-
         # 检查对象平面是否存在
         if obj_plane is None:
             continue
@@ -372,15 +380,15 @@ def apply_relations_surfacesample(
                 raise NotImplementedError  # 抛出未实现的异常
 
     # 检查初始化是否有效
-    if "OfficeChairFactory" in name:
-        a = 1
     # print([i.child_plane_idx for i in obj_state.relations])
     # print(obj_planes)
     # print([i.parent_plane_idx for i in obj_state.relations])
     # print(parent_planes)
+   
     valid, dof, T = check_init_valid(
         state, name, obj_planes, parent_planes, margins, rev_normals
     )
+   
     # valid, dof, T = check_init_valid(state, name, obj_planes, parent_planes, margins)
     if not valid:
         rels = [(rels.relation, rels.target_name) for rels in obj_state.relations]
@@ -413,6 +421,7 @@ def apply_relations_surfacesample(
         parent2_trimesh = state.planes.get_tagged_submesh(
             state.trimesh_scene, parent_obj2.name, parent_tags2, parent_plane2
         )
+        
         # 计算父平面的法向量并进行投影
         parent1_poly_index = parent_plane1[1]
         parent1_poly = parent_obj1.data.polygons[parent1_poly_index]
@@ -564,7 +573,8 @@ def try_apply_relation_constraints(
     n_try_resolve=10,
     visualize=False,
     expand_collision=False,
-    use_initial=False
+    use_initial=False,
+    closest_surface=False
 ):
     """
     name is in objs.name
@@ -585,6 +595,7 @@ def try_apply_relation_constraints(
     #     import pdb
 
     #     pdb.set_trace()
+    
     for retry in range(n_try_resolve):
         obj_state = state.objs[name]
 
@@ -596,7 +607,8 @@ def try_apply_relation_constraints(
                 f"Object {obj_state.obj.name} is too tall for the room: {obj_state.obj.dimensions[2]}, {WALL_HEIGHT=}, {WALL_THICKNESS=}"
             )
         # 应用关系以对某个对象进行表面采样 and move object
-        parent_planes = apply_relations_surfacesample(state, name, use_initial=use_initial)
+        parent_planes = apply_relations_surfacesample(state, name, use_initial=use_initial, closest_surface=closest_surface)
+        
         # assignments not valid
         if parent_planes is None:
             logger.debug(f"Found {parent_planes=} for {name=} {retry=}")
@@ -632,6 +644,7 @@ def try_apply_relation_constraints(
             #     pdb.set_trace()
             # import pdb
             # pdb.set_trace()
+            
             return True
 
         if visualize:

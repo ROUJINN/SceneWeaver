@@ -28,7 +28,9 @@ from infinigen.core.util import blender as butil
 
 from .annealing import SimulatedAnnealingSolver
 from .room import MultistoryRoomSolver, RoomSolver
+from infinigen.core.tags import Semantics, Subpart
 
+from infinigen.assets.objaverse_assets import GeneralObjavFactory
 from infinigen.assets.objects import (
             appliances,
             bathroom,
@@ -116,6 +118,7 @@ class Solver:
         self.moves = self._configure_move_weights(
             restrict_moves, addition_weight_scalar=addition_weight_scalar
         )
+        self.load_gpt_results()
 
     def _configure_move_weights(self, restrict_moves, addition_weight_scalar=1.0):
         schedules = {
@@ -182,6 +185,7 @@ class Solver:
         abort_unsatisfied: bool = False,
         print_bounds: bool = False,
         expand_collision: bool = False,
+        use_initial=False
     ):
         filter_domain = copy.deepcopy(filter_domain)
         """
@@ -190,18 +194,15 @@ class Solver:
             (-AnyRelation(), Domain({Semantics.Object, -Semantics.Room}, []))
         ])
         """
-        # if desc == "side_obj_0":
-        #     import pdb
-        #     pdb.set_trace()
         desc_full = (desc, *var_assignments.values())
-        # ('on_floor_0', 'bathroom_0-0')
 
         dom_assignments = {
             k: r.Domain(self.state.objs[objkey].tags)
             for k, objkey in var_assignments.items()
         }
-        # {Variable(room): Domain({Semantics.Bathroom, SpecificObject(name='bathroom_0-0'), Semantics.Room}, [])}
-        # {Variable(room): Domain({Semantics.Bedroom, SpecificObject(name='bedroom_0-0'), Semantics.Room}, []), Variable(obj): Domain({Semantics.Furniture, FromGenerator(BedFactory), Semantics.Bed, Semantics.Object, Semantics.RealPlaceholder, -Semantics.Room}, [])}
+
+        if use_initial:
+            dom_assignments[cu.variable_obj] = r.Domain({Semantics.Object, -Semantics.Room})
 
         filter_domain = r.substitute_all(filter_domain, dom_assignments)
         """
@@ -256,6 +257,7 @@ class Solver:
             move_gen = self.choose_move_type(j, n_steps)  # 选择移动类型
             while move_gen.__name__ != "propose_translate" :#move_gen.__name__ != "propose_translate" and :
                 move_gen = self.choose_move_type(j, n_steps) 
+            
             # if desc == "on_floor_0":
             #     while move_gen.__name__ != "propose_translate" :#move_gen.__name__ != "propose_translate" and :
             #         move_gen = self.choose_move_type(j, n_steps)  # 选择移动类型
@@ -266,9 +268,7 @@ class Solver:
             self.optim.step(
                 consgraph, self.state, move_gen, filter_domain, expand_collision
             )  # MARK # 执行优化步骤
-            invisible_others()
-            bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
-            visible_others()
+           
             
         self.optim.save_stats(
             self.output_folder / f"optim_{desc}.csv"
@@ -300,110 +300,85 @@ class Solver:
 
         return self.state
     
+    def load_gpt_results(self):
+        import json
+        import os
+
+        PATH_TO_SCENES = os.getenv("GPT_RESULTS")
+        with open(PATH_TO_SCENES,"r") as f:
+            info = json.load(f)
+        self.name_mapping = info["name_mapping"]
+        self.Placement = info["Placement"]
+        self.category_against_wall = info["category_against_wall"]
+
+        return
+    
     @gin.configurable
     def init_graph(
         self,
         # filter_domain: r.Domain,
         var_assignments: dict[str, str],
-    ):
-        name_mapping = {
-                            "Sofa": "seating.SofaFactory",
-                            "ArmChair": "seating.ArmChairFactory",
-                            "CoffeeTable": "tables.CoffeeTableFactory",
-                            "TVStand": "shelves.TVStandFactory",
-                            "TV": "appliances.TVFactory",
-                            "BookColumn": "table_decorations.BookColumnFactory",
-                            "LargeShelf": "shelves.LargeShelfFactory",
-                            "FloorLamp": "lamp.FloorLampFactory",
-                            "SideTable": "tables.SideTableFactory",
-                            "book": None,
-                            "remote": None,
-                            "magazine": None,
-                            "plant": "tableware.PlantContainerFactory",
-                            "photo frame": None,
-                            "vase": "table_decorations.VaseFactory",
-                            "decorative item": None,
-                            "coaster": None,
-                            "candle": None
-                        }
-        info_dict = {
-                        "Sofa": {"1": {"position": [2.5, 2], "rotation": 0}},
-                        "ArmChair": {
-                            "1": {"position": [1, 1], "rotation": 0},
-                            "2": {"position": [4, 1], "rotation": 0}
-                        },
-                        "CoffeeTable": {"1": {"position": [2.5, 3.5], "rotation": 0}},
-                        "TVStand": {"1": {"position": [2.5, 6.5], "rotation": 270}},
-                        # "TV": {"1": {"position": [2.5, 6.25], "rotation": 270}},
-                        # "BookColumn": {
-                        #     "1": {"position": [0.5, 6.5], "rotation": 270},
-                        #     "2": {"position": [4.5, 6.5], "rotation": 270}
-                        # },
-                        "LargeShelf": {"1": {"position": [2.5, 0.5], "rotation": 90}},
-                        "FloorLamp": {
-                            "1": {"position": [1.5, 2], "rotation": 0},
-                            "2": {"position": [3.5, 2], "rotation": 0}
-                        },
-                        "SideTable": {
-                            "1": {"position": [0.75, 1], "rotation": 0},
-                            "2": {"position": [4.25, 1], "rotation": 0}
-                        }
-                    }
+        stage = "large" #large, medium, small
+    ):  
         
-        category_against_wall = [
-                                    "TVStand",
-                                    "TV",
-                                    "LargeShelf",
-                                    "BookColumn",
-                                    # "Sofa",
-                                    # "ArmChair"
-                                ]
-        
+        # dom_assignments = {
+        #     k: r.Domain(self.state.objs[objkey].tags)
+        #     for k, objkey in var_assignments.items()
+        # }
+        # filter_domains = dict()
 
-        dom_assignments = {
-            k: r.Domain(self.state.objs[objkey].tags)
-            for k, objkey in var_assignments.items()
-        }
-        filter_domains = dict()
-
-        stages_local = get_stages()
-        filter_domains["on_floor"] = r.substitute_all(stages_local["on_floor"], dom_assignments)
-        filter_domains["on_floor_against_wall"] = r.substitute_all(stages_local["on_floor_against_wall"], dom_assignments)
+        # stages_local = self.get_stages()
+        # filter_domains["on_floor"] = r.substitute_all(stages_local["on_floor"], dom_assignments)
+        # filter_domains["on_floor_against_wall"] = r.substitute_all(stages_local["on_floor_against_wall"], dom_assignments)
         
-        for key, value in info_dict.items():
+        for key, value in self.Placement.items():
             
-            if key in category_against_wall:
-                filter_domain = filter_domains["on_floor_against_wall"]
-            else:
-                filter_domain = filter_domains["on_floor"]
-
-            if key == "FloorLamp" :
-                var_assignments = {cu.variable_room: 'newroom_0-0',
-                                   cu.variable_obj: '1351066_SofaFactory'}
-                dom_assignments = {
-                    k: r.Domain(self.state.objs[objkey].tags)
-                    for k, objkey in var_assignments.items()
-                }
-                stage = stages_local["side_by_side_sofa"]
-                filter_domain = r.substitute_all(stage, dom_assignments)
-
             for num in value.keys():
+                if num=='3':
+                    a = 1
                 position = value[num]["position"] + [0]
                 rotation = value[num]["rotation"] * math.pi / 180
+                size = value[num]["size"]
                 name = key
-                module_and_class = name_mapping[name]
-                module_name, class_name = module_and_class.rsplit('.', 1)
-                module = importlib.import_module("infinigen.assets.objects."+module_name)
-                class_obj = getattr(module, class_name)
-                gen_class = class_obj
-                # gen_class = seating.SofaFactory
+                module_and_class = self.name_mapping[name]
+                
+                if "parent" in value[num]:
+                    this_stage = "medium"
+                    if this_stage!=stage:
+                        continue
+                    parent_key,parent_num, relation = value[num]["parent"]
+                    parent_obj_name = self.Placement[parent_key][parent_num]["name"]
+                else:
+                    this_stage = "large"
+                    if this_stage!=stage:
+                        continue
+                    parent_obj_name = None
+
+                against_wall = True if key in self.category_against_wall else False
+                filter_domain = self.calc_filter_domain(value, num, on_floor=True, against_wall=against_wall)
+
+                if module_and_class is None:
+                    gen_class = GeneralObjavFactory              
+                    x_dim, y_dim, z_dim = size
+                    category = name
+                    gen_class.x_dim = x_dim
+                    gen_class.y_dim = y_dim
+                    gen_class.z_dim = z_dim
+                    gen_class.category = category
+
+                    class_name = category
+                else:
+                    module_name, class_name = module_and_class.rsplit('.', 1)
+                    module = importlib.import_module("infinigen.assets.objects."+module_name)
+                    class_obj = getattr(module, class_name)
+                    gen_class = class_obj
                 search_rels = filter_domain.relations
                 # 筛选出有效的关系，只选择非否定关系
                 search_rels = [
                     rd for rd in search_rels if not isinstance(rd[0], cl.NegatedRelation)
                 ]
 
-                assign = propose_relations.find_assignments(self.state, search_rels)
+                assign = propose_relations.find_given_assignments(self.state, search_rels, parent_obj_name=parent_obj_name)
                 for i, assignments in enumerate(assign):
                     found_tags = usage_lookup.usages_of_factory( gen_class )  
                     move = moves.Addition(
@@ -417,7 +392,6 @@ class Solver:
                     
                     target_name = f"{np.random.randint(1e7)}_{class_name}"
                     # target_name = np.random.randint(1e7)+"_SofaFactory"
-                    size = ""
                     
                     meshpath = ""
 
@@ -425,50 +399,137 @@ class Solver:
                         self.state, target_name, size, position, rotation, gen_class, meshpath
                     )
 
-                    info_dict[key][num]["name"] = move.names[0]
-                    # invisible_others()
-                    # bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
-                    # visible_others()
+                    self.Placement[key][num]["name"] = target_name
+                    
                     break
-        # save_path = "debug.blend"
-        # bpy.ops.wm.save_as_mainfile(filepath=save_path)
+                # invisible_others()
+                # bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
+                # visible_others()
+                
         return self.state
 
     def get_bpy_objects(self, domain: r.Domain) -> list[bpy.types.Object]:
         objkeys = domain_contains.objkeys_in_dom(domain, self.state)
         return [self.state.objs[k].obj for k in objkeys]
 
+    def calc_filter_domain(self, value, num, on_floor=True, against_wall=False):
+        if "parent" in value[num]:
+            parent_key,parent_num, relation = value[num]["parent"]
+            parent_obj_name = self.Placement[parent_key][parent_num]["name"]
+            var_assignments = {cu.variable_room: 'newroom_0-0',
+                                cu.variable_obj: parent_obj_name}            
+        else:
+            parent_obj_name = None
+            parent_key = None
+            relation = None
+            var_assignments = {cu.variable_room: 'newroom_0-0'}    
 
-def get_stages():
-   
+        dom_assignments = {
+            k: r.Domain(self.state.objs[objkey].tags)
+            for k, objkey in var_assignments.items()
+        }
+        stage = self.get_stage(on_floor=on_floor, against_wall=against_wall, parent=parent_key, relation=relation)
+        filter_domain = r.substitute_all(stage, dom_assignments)
 
-    on_floor = cl.StableAgainst({}, cu.floortags)
+        return filter_domain
+        
+         
+        # if key in self.category_against_wall:
+        #     filter_domain = filter_domains["on_floor_against_wall"]
+        # else:
+        #     filter_domain = filter_domains["on_floor"]
 
-    all_room = r.Domain({t.Semantics.Room, -t.Semantics.Object})
-    all_obj = r.Domain({t.Semantics.Object, -t.Semantics.Room})
+        
+        # if key == "FloorLamp" :
+        #     var_assignments = {cu.variable_room: 'newroom_0-0',
+        #                         cu.variable_obj: '1351066_SofaFactory'}
+        #     dom_assignments = {
+        #         k: r.Domain(self.state.objs[objkey].tags)
+        #         for k, objkey in var_assignments.items()
+        #     }
+        #     stage = stages_local["side_by_side_sofa"]
+        #     filter_domain = r.substitute_all(stage, dom_assignments)
 
-    all_obj_in_room = all_obj.with_relation(
-        cl.AnyRelation(), all_room.with_tags(cu.variable_room)
-    )
-    primary = all_obj_in_room.with_relation(-cl.AnyRelation(), all_obj)
+        # if key == "Chair" :
+        #     var_assignments = {cu.variable_room: 'newroom_0-0',
+        #                         cu.variable_obj: '1351066_SimpleDeskFactory'}
+        #     dom_assignments = {
+        #         k: r.Domain(self.state.objs[objkey].tags)
+        #         for k, objkey in var_assignments.items()
+        #     }
+        #     stage = stages_local["front_to_front_desk"]
+        #     filter_domain = r.substitute_all(stage, dom_assignments)
 
-    greedy_stages = {}
-    greedy_stages["on_floor"] = primary.with_relation(on_floor, all_room)
-    greedy_stages["on_floor_against_wall"] = (
-        primary.with_relation(on_floor, all_room)
-        .with_relation(cu.against_wall, all_room)
-    )
+        
+                
 
-    secondary = all_obj.with_relation(
-        cl.AnyRelation(), primary.with_tags(cu.variable_obj)
-    )
-    sofa_domain = r.Domain(usage_lookup.usages_of_factory(seating.SofaFactory) )
-    greedy_stages["side_by_side_sofa"] = secondary.with_relation(cu.leftright_leftright, sofa_domain).with_relation(on_floor, all_room)
 
-    # greedy_stages["obj_ontop_obj"] = nonside.with_relation(
-    #     cu.ontop, all_obj
-    # ).with_relation(-cu.on, all_obj)
-    # greedy_stages["obj_on_support"] = nonside.with_relation(
-    #     cu.on, all_obj
-    # ).with_relation(-cu.ontop, all_obj)
-    return greedy_stages
+    def get_stage(self, on_floor, against_wall, parent=None, relation=None):
+    
+        import importlib
+        on_floor = cu.on_floor
+
+        all_room = r.Domain({t.Semantics.Room, -t.Semantics.Object})
+        all_obj = r.Domain({t.Semantics.Object, -t.Semantics.Room})
+        all_obj_in_room = all_obj.with_relation(
+            cl.AnyRelation(), all_room.with_tags(cu.variable_room)
+        )
+        primary = all_obj_in_room.with_relation(-cl.AnyRelation(), all_obj)
+        secondary = all_obj.with_relation(
+            cl.AnyRelation(), primary.with_tags(cu.variable_obj)
+        )
+
+        if parent is not None:
+            parent_module = self.name_mapping[parent]
+            # Split into module name and attribute name
+            module_name, attribute_name = parent_module.rsplit('.', 1)
+            # Dynamically import the module
+            module = importlib.import_module("infinigen.assets.objects."+module_name)
+            # Access the attribute (which could be a class, function, etc.)
+            parent_Factory = getattr(module, attribute_name)
+            parent_domain = r.Domain(usage_lookup.usages_of_factory(parent_Factory) )
+            relation_module = getattr(cu, relation)
+            stage = secondary.with_relation(relation_module, parent_domain)
+        else:
+            stage = primary
+
+        if on_floor:
+            stage = stage.with_relation(on_floor, all_room)
+        if against_wall:
+            stage = stage.with_relation(cu.against_wall, all_room)
+
+        # sofa_domain = r.Domain(usage_lookup.usages_of_factory(seating.SofaFactory) )
+        # greedy_stages["side_by_side_sofa"] = secondary.with_relation(cu.leftright_leftright, sofa_domain).with_relation(on_floor, all_room)
+        # desk_domain = r.Domain(usage_lookup.usages_of_factory(shelves.SimpleDeskFactory) )
+        # greedy_stages["front_to_front_desk"] = secondary.with_relation(cu.front_to_front, desk_domain).with_relation(on_floor, all_room)
+        
+        return stage
+    
+
+
+
+
+# imported_modules = {
+#     "appliances": appliances,
+#     "bathroom": bathroom,
+#     "decor": decor,
+#     "elements": elements,
+#     "lamp": lamp,
+#     "seating": seating,
+#     "shelves": shelves,
+#     "table_decorations": table_decorations,
+#     "tables": tables,
+#     "tableware": tableware,
+#     "wall_decorations": wall_decorations,
+# }
+
+# import inspect
+# def get_classes_from_module(module=seating):
+#     return [name for name, obj in vars(module).items() if inspect.isclass(obj)]
+
+
+# modulenames =dict()
+# for modulename, module in imported_modules.items():
+#     class_list = get_classes_from_module(module)
+#     for name in class_list:
+#         modulenames[modulename + "." + name] = 

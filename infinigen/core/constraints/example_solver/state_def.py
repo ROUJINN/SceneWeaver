@@ -46,6 +46,7 @@ class ObjectState:
     obj: bpy.types.Object
     generator: typing.Optional[AssetFactory] = None
     tags: set = field(default_factory=set)
+    size: list[float] = None
     relations: list[RelationState] = field(default_factory=list)
 
     dof_matrix_translation: np.array = None

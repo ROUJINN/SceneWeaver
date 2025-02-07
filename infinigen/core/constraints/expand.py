@@ -2,7 +2,6 @@ import copy
 
 import mathutils
 import numpy as np
-
 D_base = 0.3
 EXPAND_DISTANCE = {
     # front
@@ -22,7 +21,7 @@ EXPAND_DISTANCE = {
     "SimpleBookcaseFactory": [D_base, 0, 0],
     "SimpleBookcaseBaseFactory": [D_base, 0, 0],
     "SidetableDeskFactory": [D_base, 0, 0],
-    "SimpleDeskFactory": [D_base, 0, 0],
+    # "SimpleDeskFactory": [D_base, 0, 0],
     "SimpleDeskBaseFactory": [D_base, 0, 0],
     "SingleCabinetFactory": [D_base, 0, 0],
     "SingleCabinetBaseFactory": [D_base, 0, 0],
@@ -39,10 +38,13 @@ EXPAND_DISTANCE = {
     "MicrowaveFactory": [D_base, 0, 0],
     # front,side
     "BedFactory": [D_base, 0, D_base],
+    
     # "BedFrameFactory":[D_base,0,D_base],
     # front,back,side
     "KitchenIslandFactory": [D_base, D_base, 2 * D_base],
     "CountertopFactory": [D_base, D_base, 2 * D_base],
+    # "TableDiningFactory": [D_base, D_base, 2 * D_base],
+    # "SimpleDeskFactory": [D_base, D_base, 2 * D_base],
 }
 
 

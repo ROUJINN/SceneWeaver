@@ -18,6 +18,8 @@ from infinigen.core.constraints.example_solver.geometry import parse_scene
 from infinigen.core.constraints.example_solver.state_def import State
 from infinigen.core.placement.placement import parse_asset_name
 from infinigen.core.util import blender as butil
+from infinigen_examples.util.visible import invisible_others, visible_others
+
 
 logger = logging.getLogger(__name__)
 
@@ -48,56 +50,68 @@ def apply_cutter(state, objkey, cutter):
 
 
 def populate_state_placeholders(state: State, filter=None, final=True):
+    # 记录信息，表示正在填充占位符，并记录 final 和 filter 参数的值
     logger.info(f"Populating placeholders {final=} {filter=}")
+    # 获取名为 "unique_assets" 的集合，用于存放唯一的资产对象
     unique_assets = butil.get_collection("unique_assets")
     unique_assets.hide_viewport = True
-
+    # 如果 final 参数为 True，执行以下操作
     if final:
         for os in state.objs.values():
+            # 如果对象属于房间类别，则更新对象的名字
             if t.Semantics.Room in os.tags:
                 os.obj = bpy.data.objects[os.obj.name + ".meshed"]
 
-    targets = []
-
+    targets = []# 用于存放待处理的目标对象
+    # 遍历状态中的所有对象
     for objkey, os in state.objs.items():
+        if objkey=="8634849_Blackboard":
+            a = 1
+        # 如果对象没有生成器，则跳过
         if os.generator is None:
             continue
-
+        # 如果提供了过滤条件，且当前对象不符合过滤条件，则跳过
         if filter is not None and not usage_lookup.has_usage(
             os.generator.__class__, filter
         ):
             continue
-
+        # 如果对象名包含 "spawn_asset" 则说明已经处理过，跳过此对象
         if "spawn_asset" in os.obj.name:
             butil.put_in_collection(os.obj, unique_assets)
             logger.debug(f"Found already populated asset {os.obj.name=}, continuing")
             continue
-
+        # 将当前对象的 objkey 加入目标列表
         targets.append(objkey)
 
-    update_state_mesh_objs = []
-
+    update_state_mesh_objs = [] # 用于存放需要更新的网格对象信息
+    # 遍历目标对象，执行生成和处理
     for i, objkey in enumerate(targets):
+        if objkey=="8634849_Blackboard":
+            a = 1
         os = state.objs[objkey]
-        placeholder = os.obj
+        placeholder = os.obj # 获取占位符对象
 
         logger.info(f"Populating {i}/{len(targets)} {placeholder.name=}")
 
-        old_objname = placeholder.name
-        update_state_mesh_objs.append((objkey, old_objname))
+        old_objname = placeholder.name# 记录原对象的名称
+        update_state_mesh_objs.append((objkey, old_objname)) # 将旧对象信息加入更新列表
 
-        *_, inst_seed = parse_asset_name(placeholder.name)
+        *_, inst_seed = parse_asset_name(placeholder.name) # 解析资产名称并提取实例种子
         # print(placeholder.name)
         if "BookStackFactory" in placeholder.name:
-            a = 1
+            a = 1 
 
+        # 使用生成器生成新的对象，并设置位置、旋转等属性
         os.obj = os.generator.spawn_asset(
             i=int(inst_seed),
             loc=placeholder.location,  # we could use placeholder=pholder here, but I worry pholder may have been modified
             rot=placeholder.rotation_euler,  # MARK
         )
-        os.generator.finalize_assets([os.obj])
-        butil.put_in_collection(os.obj, unique_assets)
+        if os.size is not None:
+            from infinigen.core.constraints.example_solver.moves.addition import resize_obj
+            os.obj = resize_obj(os.obj, os.size, apply_transform=False)
+        os.generator.finalize_assets([os.obj]) # 完成生成器资产的最终处理
+        butil.put_in_collection(os.obj, unique_assets)# 将生成的对象放入唯一资产集合中
 
         # print(center)
         # state.obj_info[os.obj.name] = {  # "category":os.obj.name.split("(")[0],
@@ -107,6 +121,7 @@ def populate_state_placeholders(state: State, filter=None, final=True):
         #     "size": size,
         # }
 
+        # 查找可能存在的切割器（cutter），如果找到则应用切割操作
         cutter = next(
             (o for o in butil.iter_object_tree(os.obj) if o.name.endswith(".cutter")),
             None,
@@ -115,28 +130,30 @@ def populate_state_placeholders(state: State, filter=None, final=True):
             f"{populate_state_placeholders.__name__} found {cutter=} for {os.obj.name=}"
         )
         if cutter is not None:
+            # 如果找到了切割器，则应用切割并记录切割的对象
             cut_objs = apply_cutter(state, objkey, cutter)
             logger.debug(
                 f"{populate_state_placeholders.__name__} cut {cutter.name=} from {cut_objs=}"
             )
-            update_state_mesh_objs += cut_objs
+            update_state_mesh_objs += cut_objs # 更新网格对象列表
+       
 
-    unique_assets.hide_viewport = False
-
+    unique_assets.hide_viewport = False  # 恢复显示资产集合的视图
+    # 如果是最终的处理，则返回
     if final:
         return
-
+    # 否则，更新修改过的对象到 trimesh 状态中
     # objects modified in any way (via pholder update or boolean cut) must be synched with trimesh state
     for objkey, old_objname in tqdm(
         set(update_state_mesh_objs), desc="Updating trimesh with populated objects"
     ):
         os = state.objs[objkey]
-
+        # 删除旧的 trimesh 对象
         # delete old trimesh
         delete_obj(state.trimesh_scene, old_objname, delete_blender=False)
-
+        # 将新的生成的对象添加到 trimesh 场景中
         # put the new, populated object into the state
         parse_scene.preprocess_obj(os.obj)
         if not final:
-            tagging.tag_canonical_surfaces(os.obj)
-        parse_scene.add_to_scene(state.trimesh_scene, os.obj, preprocess=True)
+            tagging.tag_canonical_surfaces(os.obj)  # 标记标准表面
+        parse_scene.add_to_scene(state.trimesh_scene, os.obj, preprocess=True)  # 添加到场景

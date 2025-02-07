@@ -58,6 +58,7 @@ from infinigen_examples.util.generate_indoors_util import (
     place_cam_overhead,
     restrict_solving,
 )
+from infinigen_examples.util.visible import invisible_others, visible_others
 
 # from . import generate_nature  # noqa F401 # needed for nature gin configs to load
 
@@ -122,6 +123,9 @@ all_vars = [cu.variable_room, cu.variable_obj]
 
 @gin.configurable
 def compose_indoors(output_folder: Path, scene_seed: int, **overrides):
+
+    import os
+    os.environ['GPT_RESULTS'] = "/home/yandan/workspace/infinigen/GPT/results.json"    
     p = pipeline.RandomStageExecutor(scene_seed, output_folder, overrides)
 
     logger.debug(overrides)
@@ -190,7 +194,7 @@ def compose_indoors(output_folder: Path, scene_seed: int, **overrides):
                     bpy.ops.view3d.view_all(override)
 
     # bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
-    def init_graph():
+    def init_graph(this_stage):
         assignments = greedy.iterate_assignments(
             stages["on_floor"], state, all_vars, limits, nonempty=True
         )
@@ -198,11 +202,12 @@ def compose_indoors(output_folder: Path, scene_seed: int, **overrides):
             solver.init_graph(
                 # stages["on_floor"],
                 var_assignments=vars,
+                stage=this_stage
             )
             # bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
         return solver.state
 
-    state = p.run_stage("init_graph", init_graph, use_chance=False, default=state)
+    state = p.run_stage("init_graph", init_graph, this_stage="large",use_chance=False, default=state)
 
     def solve_large():
         assignments = greedy.iterate_assignments(
@@ -221,28 +226,9 @@ def compose_indoors(output_folder: Path, scene_seed: int, **overrides):
             # bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
         return solver.state
 
-    def invisible_others():
-        # rooms_split["exterior"].hide_viewport = True
-        # rooms_split["exterior"].hide_render = True
-        mesh = butil.get_collection("placeholders:room_shells")
-        mesh.hide_viewport = True
-        # invisible_to_camera.apply(mesh.objects)
-        mesh = butil.get_collection("placeholders:portal_cutters")
-        mesh.hide_viewport = True
-        # invisible_to_camera.apply(mesh.objects)
-        mesh = butil.get_collection("placeholders:room_meshes")
-        mesh.hide_viewport = True
-        # invisible_to_camera.apply(mesh.objects)
-        return
-
-    # p.run_stage("invisible_others", invisible_others, use_chance=False)
-    # bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
 
     state = p.run_stage("solve_large", solve_large, use_chance=False, default=state)
-    # p.run_stage("invisible_others", invisible_others, use_chance=False)
-    # bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
-    # import pdb
-    # pdb.set_trace()
+   
 
     solved_rooms = [
         state.objs[assignment[cu.variable_room]].obj
@@ -301,14 +287,16 @@ def compose_indoors(output_folder: Path, scene_seed: int, **overrides):
         "animate_cameras", animate_cameras, use_chance=False, prereq="pose_cameras"
     )
 
-    p.run_stage(
-        "populate_intermediate_pholders",
-        populate.populate_state_placeholders,
-        solver.state,
-        filter=t.Semantics.AssetPlaceholderForChildren,
-        final=False,
-        use_chance=False,
-    )
+    # p.run_stage(
+    #     "populate_intermediate_pholders",
+    #     populate.populate_state_placeholders,
+    #     solver.state,
+    #     filter=t.Semantics.AssetPlaceholderForChildren,
+    #     final=False,
+    #     use_chance=False,
+    # )
+
+    state = p.run_stage("init_graph", init_graph, this_stage="medium",use_chance=False, default=state)
 
     def solve_medium():
         n_steps = overrides["solve_steps_medium"]
@@ -329,13 +317,52 @@ def compose_indoors(output_folder: Path, scene_seed: int, **overrides):
         ):
             solver.solve_objects(
                 consgraph, stages["side_obj"], vars, n_steps, desc=f"side_obj_{i}",
-                expand_collision=True
+                expand_collision=True, use_initial=True
             )
-        
+           
         return solver.state
 
     state = p.run_stage("solve_medium", solve_medium, use_chance=False, default=state)
 
+    def solve_large_and_medium():
+        for i in range(3):
+            assignments = greedy.iterate_assignments(
+                stages["on_floor"], state, all_vars, limits, nonempty=True
+            )
+            for i, vars in enumerate(assignments):
+                solver.solve_objects(
+                    consgraph,
+                    stages["on_floor"],
+                    var_assignments=vars,
+                    n_steps=overrides["solve_steps_large"]//5,
+                    desc=f"on_floor_{i}",
+                    abort_unsatisfied=overrides.get("abort_unsatisfied_large", False),
+                    expand_collision=True,
+                )
+
+            for i, vars in enumerate(
+                greedy.iterate_assignments(stages["side_obj"], state, all_vars, limits)
+            ):
+                n_steps = overrides["solve_steps_medium"]//5
+                solver.solve_objects(
+                    consgraph, stages["side_obj"], vars, n_steps, desc=f"side_obj_{i}",
+                    expand_collision=True, use_initial=True
+                )
+
+        return solver.state
+
+
+    state = p.run_stage("solve_large_and_medium", solve_large_and_medium, use_chance=False, default=state)
+
+    p.run_stage(
+        "populate_intermediate_pholders",
+        populate.populate_state_placeholders,
+        solver.state,
+        filter=t.Semantics.AssetPlaceholderForChildren,
+        final=False,
+        use_chance=False,
+    )
+    
     def solve_small():
         n_steps = overrides["solve_steps_small"]
 
@@ -365,12 +392,13 @@ def compose_indoors(output_folder: Path, scene_seed: int, **overrides):
         #    solver.solve_objects(consgraph, stages['tertiary'], vars, n_steps, desc=f"tertiary_{i}")
         return solver.state
 
-    state = p.run_stage("solve_small", solve_small, use_chance=False, default=state)
-
+    # state = p.run_stage("solve_small", solve_small, use_chance=False, default=state)
+# 
+    
     p.run_stage(
         "populate_assets", populate.populate_state_placeholders, state, use_chance=False
     )
-
+    
     def place_floating():
         pholder_rooms = butil.get_collection("placeholders:room_meshes")
         pholder_cutters = butil.get_collection("placeholders:portal_cutters")
@@ -394,8 +422,9 @@ def compose_indoors(output_folder: Path, scene_seed: int, **overrides):
             collision_placed=overrides.get("enable_collision_floating", False),
             collision_existing=overrides.get("enable_collision_solved", False),
         )
-
+   
     p.run_stage("floating_objs", place_floating, use_chance=False, default=state)
+    
 
     door_filter = r.Domain({t.Semantics.Door}, [(cl.AnyRelation(), stages["rooms"])])
     window_filter = r.Domain(
@@ -406,7 +435,7 @@ def compose_indoors(output_folder: Path, scene_seed: int, **overrides):
         lambda: room_dec.populate_doors(solver.get_bpy_objects(door_filter)),
         use_chance=False,
     )
-
+    
     p.run_stage(
         "room_windows",
         lambda: room_dec.populate_windows(solver.get_bpy_objects(window_filter)),
@@ -505,7 +534,7 @@ def compose_indoors(output_folder: Path, scene_seed: int, **overrides):
         prereq="terrain",
         default=0,
     )
-
+    
     if overrides.get("topview", False):
         rooms_split["exterior"].hide_viewport = True
         rooms_split["ceiling"].hide_viewport = True
@@ -547,7 +576,7 @@ def compose_indoors(output_folder: Path, scene_seed: int, **overrides):
                         area.spaces.active.region_3d.view_perspective = "CAMERA"
                         break
                 break
-
+    
     return {
         "height_offset": height,
         "whole_bbox": house_bbox,
@@ -636,3 +665,4 @@ if __name__ == "__main__":
 
     # pdb.set_trace()
     main(args)
+    

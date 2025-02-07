@@ -8,7 +8,7 @@ from collections import OrderedDict
 
 from numpy.random import uniform
 
-from infinigen.assets import static_assets
+from infinigen.assets import static_assets, objaverse_assets
 from infinigen.assets.objects import (
     appliances,
     bathroom,
@@ -302,13 +302,16 @@ def home_constraints():
 
     # region living room
     Sofa_obj = furniture[seating.SofaFactory]
+
+    cabinet_obj = furniture[shelves.SingleCabinetFactory]
     FloorLamp_obj = obj[lamp.FloorLampFactory].related_to(rooms, cu.on_floor)
-    ArmChair_obj = furniture[seating.ArmChairFactory]
+    desk_obj = furniture[shelves.SimpleDeskFactory]
+    plant_obj = obj[tableware.LargePlantContainerFactory].related_to(rooms, cu.on_floor)
     # FloorLamp_obj = furn   iture[lamp.FloorLampFactory].related_to(ArmChair_obj,cu.side_by_side)
     
     constraints["living_room"] = newroom.all(
         lambda r: (
-            Sofa_obj.related_to(r).count().in_range(1, 1)
+            (desk_obj.related_to(r).count() >= 1)
             # * CoffeeTable_obj.related_to(r).count().in_range(1, 1)
             # * CoffeeTable_obj.related_to(Sofa_obj.related_to(r), cu.front_against).count().in_range(1, 1)
             # * TVStand_obj.related_to(r).count().in_range(1, 1)
@@ -323,10 +326,14 @@ def home_constraints():
             #         * (books_obj.related_to(s, cu.on).count() >= 0)
             #     )
             # )
-            # * ArmChair_obj.related_to(Sofa_obj.related_to(r), cu.side_by_side).count().in_range(2, 2)
+            * desk_obj.related_to(r).all(
+                lambda s: (
+                    plant_obj.related_to(s, cu.front_to_front).count().in_range(1, 1)
+                )
+            )
             # * SideTable_obj.related_to(r).count().in_range(2, 2)
             # * SideTable_obj.related_to(Sofa_obj.related_to(r), cu.side_by_side).count().in_range(2, 2)
-            * FloorLamp_obj.related_to(Sofa_obj.related_to(r), cu.side_by_side).count().in_range(2, 2)
+            # * FloorLamp_obj.related_to(Sofa_obj.related_to(r), cu.side_by_side).count().in_range(2, 2)
             # * SideTable_obj.related_to(r).all(
             #     lambda s: (
             #         plant_obj.related_to(s, cu.ontop).count().in_range(1, 1)

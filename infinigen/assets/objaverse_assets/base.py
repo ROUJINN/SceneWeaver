@@ -40,7 +40,7 @@ class ObjaverseFactory(AssetFactory):
         )
 
     def create_asset(self, placeholder, **params) -> bpy.types.Object:
-        from ..objaverse.load_asset import load_pickled_3d_asset
+        from .load_asset import load_pickled_3d_asset
 
         cat = "book stack"
         object_names = self.retriever.retrieve_object_by_cat(cat)

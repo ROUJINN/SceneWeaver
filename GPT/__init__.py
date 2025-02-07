@@ -18,7 +18,7 @@ if __name__ == "__main__":
     with open("category_lst.json", "w") as f:
         json.dump(out, f, indent=4)
 
-    from infinigen.assets.objects.objaverse.load_asset import load_pickled_3d_asset
+    from infinigen.assets.objaverse_assets.load_asset import load_pickled_3d_asset
 
     obj_names = out[cat]
     basedir = "/home/yandan/workspace/Holodeck/data/2023_09_23/assets"

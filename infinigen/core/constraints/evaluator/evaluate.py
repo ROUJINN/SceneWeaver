@@ -236,8 +236,6 @@ def evaluate_problem(
     # bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
     # visible_others()
     for name, node in problem.constraints.items():
-        if name == "chair":
-            a = 1
         logger.debug(f"Evaluating constraint {name=}")
         violated[name] = viol_count(node, state, memo, filter=filter)
         logger.debug(f"Evaluator found {violated[name]} violations for {name=}")

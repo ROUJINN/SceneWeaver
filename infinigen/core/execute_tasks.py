@@ -198,7 +198,7 @@ def execute_tasks(
             pickle.dump(info, f, protocol=pickle.HIGHEST_PROTOCOL)
 
     cam_util.set_active_camera(*camera_id)
-
+    
     group_collections()
 
     if Task.Populate in task and populate_scene_func is not None:
@@ -233,20 +233,21 @@ def execute_tasks(
                 mesh.endswith(".glb") or mesh.endswith(".b_displacement.npy")
             ) and not os.path.islink(output_folder / mesh):
                 os.symlink(input_folder / mesh, output_folder / mesh)
+    
     if Task.Coarse in task or Task.Populate in task or Task.FineTerrain in task:
         with Timer("Writing output blendfile"):
             logging.info(
                 f"Writing output blendfile to {output_folder / output_blend_name}"
             )
+            
             if optimize_terrain_diskusage and task == [Task.FineTerrain]:
                 os.symlink(
                     input_folder / output_blend_name, output_folder / output_blend_name
                 )
             else:
-                bpy.ops.wm.save_mainfile(
+                bpy.ops.wm.save_as_mainfile(   #save_mainfile
                     filepath=str(output_folder / output_blend_name)
-                )
-
+                ) 
         tag_system.save_tag(path=str(output_folder / "MaskTag.json"))
 
         with (output_folder / "version.txt").open("w") as f:
@@ -254,7 +255,7 @@ def execute_tasks(
 
         with (output_folder / "polycounts.txt").open("w") as f:
             save_polycounts(f)
-
+   
     for col in bpy.data.collections["unique_assets"].children:
         col.hide_viewport = False
 
@@ -280,15 +281,14 @@ def execute_tasks(
 
     if Task.Export in task:
         export_scene(input_folder / output_blend_name, output_folder)
-
+   
     if Task.MeshSave in task:
         save_meshes(
             scene_seed,
             output_folder=output_folder,
             frame_range=frame_range,
         )
-
-
+   
 def main(input_folder, output_folder, scene_seed, task, task_uniqname, **kwargs):
     version_req = ["3.6.0"]
     assert bpy.app.version_string in version_req, (

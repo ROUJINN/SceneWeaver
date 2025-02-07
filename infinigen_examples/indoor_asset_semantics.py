@@ -3,6 +3,7 @@
 
 # Authors: Alexander Raistrick
 import infinigen.assets.static_assets as static_assets
+import infinigen.assets.objaverse_assets as objaverse_assets
 
 from infinigen.assets.objects import (
     appliances,
@@ -11,7 +12,7 @@ from infinigen.assets.objects import (
     decor,
     elements,
     lamp,
-    objaverse,
+    # objaverse_assets,
     seating,
     shelves,
     table_decorations,
@@ -109,7 +110,7 @@ def home_asset_usage():
         used_as[Semantics.Dishware],
     )
 
-    used_as[Semantics.Objaverse] = {objaverse.ObjaverseFactory}
+    used_as[Semantics.Objaverse] = {objaverse_assets.ObjaverseFactory}
 
     # endregion
 
@@ -193,6 +194,7 @@ def home_asset_usage():
             seating.SofaFactory,
             shelves.TVStandFactory,
             static_assets.StaticSofaFactory,
+            objaverse_assets.GeneralObjavFactory
         },
     )
 
@@ -243,6 +245,7 @@ def home_asset_usage():
             appliances.MonitorFactory,
             elements.RugFactory,
             bathroom.HardwareFactory,
+            objaverse_assets.GeneralObjavFactory
         },
     )
 
@@ -293,6 +296,7 @@ def home_asset_usage():
         table_decorations.SinkFactory,
         tables.TableCocktailFactory,
         static_assets.StaticShelfFactory,
+        objaverse_assets.GeneralObjavFactory
     }
 
     used_as[Semantics.PlaceholderBBox] = {

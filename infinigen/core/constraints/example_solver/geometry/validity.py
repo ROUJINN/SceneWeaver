@@ -119,7 +119,7 @@ def check_post_move_validity(
     # bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
     # visible_others()
     # check relation
-    if name=="6870354_ArmChairFactory":
+    if "ArmChairFactory" in name:
         a = 1
     if not all_relations_valid(state, name, use_initial=use_initial):
         print("all_relations_valid not valid ",name)

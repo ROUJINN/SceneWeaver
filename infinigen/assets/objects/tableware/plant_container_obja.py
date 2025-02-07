@@ -69,7 +69,7 @@ class PlantContainerFactory(AssetFactory):
         )
 
     def create_asset(self, **params) -> bpy.types.Object:
-        from ..objaverse.load_asset import load_pickled_3d_asset
+        from infinigen.assets.objaverse_assets.load_asset import load_pickled_3d_asset
 
         cat = "Plant Container"
         object_names = self.retriever.retrieve_object_by_cat(cat)

@@ -26,7 +26,8 @@ from .segment import SegmentMaker
 from .solidifier import BlueprintSolidifier
 from .solver import BlueprintSolver, BlueprintStaircaseSolver
 from .utils import unit_cast
-
+import json
+import os
 
 @gin.configurable
 class RoomSolver:
@@ -37,12 +38,18 @@ class RoomSolver:
         iters_mult=150,
     ):
         self.factory_seed = factory_seed
+        #load room size
+        GPT_RESULTS = os.getenv("GPT_RESULTS")
+        with open(GPT_RESULTS,"r") as f:
+            info = json.load(f)
+        self.width, self.height = info["roomsize"]
+
         with FixedSeed(factory_seed):
             self.graph_maker = GraphMaker(factory_seed)
             # self.graph = self.graph_maker.make_graph(np.random.randint(1e7))
             self.graph = self.graph_maker.make_graph_singleroom(np.random.randint(1e7))
             # self.width, self.height = self.graph_maker.suggest_dimensions(self.graph)
-            self.width, self.height = 5,7
+            # self.width, self.height = 10,15
             self.contour_factory = ContourFactory(self.width, self.height)
             # self.contour = self.contour_factory.make_contour(np.random.randint(1e7))
             self.contour = self.contour_factory.make_contour_singleroom(

@@ -4,6 +4,7 @@ import pickle
 import bpy
 import numpy as np
 from mathutils import Vector
+from infinigen.core.util import blender as butil
 
 
 def load_pickled_3d_asset(file_path, idx=0):

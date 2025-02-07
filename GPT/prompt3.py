@@ -159,7 +159,9 @@ user_prompt = prompts.step_5_position_prompt_user.format(big_category_dict=big_c
                                                            roomsize=roomsize_str)
 prompt_payload = gpt.get_payload(prompts.step_5_position_prompt_system, user_prompt)
 success = False
-while not success:
+iter = 0
+while not success and iter<5:
+    iter += 1
     gpt_text_response = gpt(payload=prompt_payload, verbose=True)
     print(gpt_text_response)
 
