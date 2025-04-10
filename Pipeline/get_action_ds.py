@@ -77,7 +77,8 @@ def get_action1_ds(user_demand = "",iter = 1):
 
     with open(f"/home/yandan/workspace/infinigen/record_scene/layout_{iter-1}.json", "r") as f:
         layout = json.load(f)
-    sceneinfo_prompt =  prompts.sceneinfo_prompt.format(scene_layout=dict2str(layout["objects"]))
+    sceneinfo_prompt =  prompts.sceneinfo_prompt.format(scene_layout=dict2str(layout["objects"]),
+                                                        structure=dict2str(layout["structure"]))
 
     idea_example = prompts.idea_example
     system_payload = prompts.feedback_reflections_prompt_system.format(system_prompt=system_prompt,

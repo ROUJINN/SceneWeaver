@@ -221,10 +221,7 @@ def move_for_relation_and_collision(
     # bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
     # visible_others()
     # check relation
-    if "ArmChairFactory" in name:
-        a = 1
-    if name == "5048934_BookStackFactory":
-        a = 1
+
     if not all_relations_valid(state, name, use_initial=use_initial):
         print("all_relations_valid not valid ", name)
         if visualize:
@@ -234,8 +231,7 @@ def move_for_relation_and_collision(
         #     return False, None
         # else:
         #     return False
-    if "FloorLampFactory" in name:
-        a = 1
+
     # check collision
     if disable_collision_checking:
         return True

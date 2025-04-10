@@ -14,8 +14,8 @@ def load_previous_guide(iter):
         with open(f"record/get_action_iter_{i}.json","r") as f:
             j = json.load(f)
         info = {"iter": j["iter"],
-                "Thoughts": j["Thoughts"],
-                "Recommendation": j["Recommendation"],
+                # "Thoughts": j["Thoughts"],
+                # "Recommendation": j["Recommendation"],
                 "Method number": j["Method number"],
                 "Ideas": j["Ideas"]
                 }
@@ -68,6 +68,7 @@ def get_action0(user_demand = "Classroom",iter = 0):
     roomtype = gpt_dict_response["RoomType"]
 
     return action,ideas,roomtype
+
 
 
 def get_action1(user_demand = "",iter = 1):

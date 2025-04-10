@@ -33,7 +33,7 @@ from .room import MultistoryRoomSolver, RoomSolver
 from infinigen.core.tags import Semantics, Subpart
 
 from infinigen.assets.objaverse_assets import GeneralObjavFactory
-
+from infinigen.core.constraints.example_solver.geometry.dof import apply_relations_surfacesample
 from infinigen.assets.metascene_assets import GeneralMetaFactory
 from infinigen.assets.threedfront_assets import GeneralThreedFrontFactory
 from infinigen.assets.objects import (
@@ -500,7 +500,10 @@ class Solver:
                             temp_force_tags=found_tags,  # 临时强制标签
                         )
                         
-                        target_name = f"{np.random.randint(1e7)}_{class_name}"
+                        while True:
+                            target_name = f"{np.random.randint(1e7)}_{class_name}"
+                            if target_name not in self.state.objs:
+                                break
                         # target_name = np.random.randint(1e7)+"_SofaFactory"
                         
                         meshpath = None
@@ -566,6 +569,9 @@ class Solver:
             os = self.state.objs[name]
             obj = os.obj
 
+            self.add_againt_wall(name)
+            # import pdb
+            # pdb.set_trace()
             iu.set_location(self.state.trimesh_scene, os.obj.name, info["location"])
             iu.set_rotation(self.state.trimesh_scene, os.obj.name, info["rotation"])
 
@@ -586,6 +592,10 @@ class Solver:
             obj.select_set(True)  # Select the object
             bpy.ops.object.transform_apply(
                 location=False, rotation=False, scale=True
+            )
+            
+            parent_planes = apply_relations_surfacesample(
+                self.state, name, use_initial=True,closest_surface=True
             )
 
         remove_lst = []
@@ -1138,9 +1148,37 @@ class Solver:
         
         filter_domain = r.substitute_all(stage, dom_assignments)
 
+
         return filter_domain
          
 
+    def add_againt_wall(self,target_name):
+        all_room = r.Domain({t.Semantics.Room, -t.Semantics.Object})
+        all_obj = r.Domain({t.Semantics.Object, -t.Semantics.Room})
+        base_domain = all_obj.with_relation(cu.against_wall, all_room)
+        rel = base_domain.relations[-1][0]
+        # parent_obj = obj = self.state.objs['newroom_0-0'].obj
+        # n_parent_planes = len(
+        #         self.state.planes.get_tagged_planes(parent_obj, rel.parent_tags)
+        #     )
+        # parent_order = np.arange(n_parent_planes)
+        # np.random.shuffle(parent_order)
+        
+        assignment = state_def.RelationState(
+                relation=rel,  # 当前关系
+                target_name='newroom_0-0',  # 目标对象
+                child_plane_idx=0,  # TODO fill in at apply()-time
+                parent_plane_idx=0,  # 当前父对象的平面索引
+            )
+        
+        for rel in self.state.objs[target_name].relations:
+            if rel.target_name == assignment.target_name \
+                and rel.relation.child_tags == assignment.relation.child_tags \
+                and rel.relation.parent_tags == assignment.relation.parent_tags:
+                return
+
+        self.state.objs[target_name].relations.append(assignment)
+        return 
 
     def get_stage(self, is_on_floor, against_wall, parent_obj_name=None, relation=None):
 

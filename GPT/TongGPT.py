@@ -53,31 +53,31 @@ class GPT4V(GPT4o):
         super().__init__(MODEL, REGION)
 
 
-if __name__ == "__main__":
-    #     tonggpt = TongGPT()
-    #     response = tonggpt.send_request("Say Hello!")
-    #     a = 1
-    #     # gen_results(job_id)
+# if __name__ == "__main__":
+#     #     tonggpt = TongGPT()
+#     #     response = tonggpt.send_request("Say Hello!")
+#     #     a = 1
+#     #     # gen_results(job_id)
 
-    from openai import AzureOpenAI
+#     from openai import AzureOpenAI
 
-    REGION = "southcentralus"
-    MODEL = "gpt-4-0125-preview"
-    API_KEY = "e989ba33fe61d1251d2921132320c92c"
+#     REGION = "southcentralus"
+#     MODEL = "gpt-4-0125-preview"
+#     API_KEY = "e989ba33fe61d1251d2921132320c92c"
 
-    API_BASE = "https://api.tonggpt.mybigai.ac.cn/proxy"
-    ENDPOINT = f"{API_BASE}/{REGION}"
+#     API_BASE = "https://api.tonggpt.mybigai.ac.cn/proxy"
+#     ENDPOINT = f"{API_BASE}/{REGION}"
 
-    client = AzureOpenAI(
-        api_key=API_KEY,
-        api_version="2024-02-01",
-        azure_endpoint=ENDPOINT,
-    )
+#     client = AzureOpenAI(
+#         api_key=API_KEY,
+#         api_version="2024-02-01",
+#         azure_endpoint=ENDPOINT,
+#     )
 
-    response = client.chat.completions.create(
-        model=MODEL,
-        messages=[{"role": "user", "content": "Say Hello."}],
-    )
+#     response = client.chat.completions.create(
+#         model=MODEL,
+#         messages=[{"role": "user", "content": "Say Hello."}],
+#     )
 
-    print(response.model_dump_json(indent=2))
-    print(response.choices[0].message.content)
+#     print(response.model_dump_json(indent=2))
+#     print(response.choices[0].message.content)

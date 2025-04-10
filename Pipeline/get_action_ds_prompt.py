@@ -9,6 +9,7 @@ from get_action_prompt import (
 )
 
 sceneinfo_prompt = """
-Layout: {scene_layout}.
+Scene Layout: {scene_layout}.
+Layout of door and windows: {structure}
 "None" means the scene is empty.
 """

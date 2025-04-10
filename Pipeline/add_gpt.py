@@ -22,7 +22,8 @@ def generate_scene_iter1_gpt(user_demand,ideas,iter):
     step_1_big_object_prompt_user = prompts1.step_1_big_object_prompt_user.format(demand=user_demand, 
                                                                                 ideas = ideas,
                                                                                 roomsize = roomsize_str,
-                                                                                scene_layout=layout["objects"])
+                                                                                scene_layout=layout["objects"],
+                                                                                structure = layout["structure"])
     
     prompt_payload = gpt.get_payload_scene_image(prompts1.step_1_big_object_prompt_system, 
                                                  step_1_big_object_prompt_user,
@@ -36,7 +37,7 @@ def generate_scene_iter1_gpt(user_demand,ideas,iter):
 
 
     # #### 2. get object class name in infinigen
-    category_list = gpt_dict_response["List of new furniture"]
+    category_list = gpt_dict_response["Number of new furniture"]
     s = lst2str(list(category_list.keys()))
     user_prompt = prompts0.step_3_class_name_prompt_user.format(
         category_list=s, demand=user_demand

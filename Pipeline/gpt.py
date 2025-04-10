@@ -119,7 +119,7 @@ class GPT4(GPT4o):
                 {"role": "user", "content": content_user},
             ],
             "temperature": 0,
-            "max_tokens": 4096,
+            "max_tokens": 8192,
         }
         return object_caption_payload
     

@@ -6,8 +6,9 @@ Your goal is to follow the user demand and ideas to add objects in the scene.
 You will receive:
 1. The user demand you need to follow.
 2. Room size, including length and width in meters.
-3. The layout of current scene, including each object's X-Y-Z Position, Z rotation, and size (x_dim, y_dim, z_dim).
-4. A rendered image of the entire scene taken from the top view.
+3. The layout of current scene, including each object's X-Y-Z Position, Z rotation, size (x_dim, y_dim, z_dim), as well as relation info with parents.
+4. Layout of door and windows.
+5. A rendered image of the entire scene taken from the top view.
 
 **3D Convention:**
 - Right-handed coordinate system.
@@ -51,7 +52,7 @@ Here is the example:
 {
     "User demand": "Bedroom",
     "Roomsize": [3, 4],
-    "List of new furniture": {"book":"2", "bench":"1"},
+    "Number of new furniture": {"book":"2", "bench":"1"},
     "category_against_wall": [],
     "Relation": [["book", "nightstand", "ontop"], ["bench", "bed", "front_to_front"]],
     "Placement": {
@@ -69,10 +70,12 @@ step_1_big_object_prompt_user = """
 Here is the information you receive:
 1.User demand for the entire scene: {demand}
 2.Ideas for this step: {ideas} 
-2.Room size: {roomsize}
-3.Layout: 
+3.Room size: {roomsize}
+4.Scene layout: 
 {scene_layout}
-4.Rendered Image from the top view: SCENE_IMAGE.
+5.Layout of door and windows"
+{structure}
+6.Rendered Image from the top view: SCENE_IMAGE.
 
 Here is your response, return a json format like the given example:
 """

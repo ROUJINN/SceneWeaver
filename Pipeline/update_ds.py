@@ -30,6 +30,7 @@ Here is the information you receive:
 3.User demand for the entire scene: {user_demand}
 4.Ideas for this step: {ideas} 
 5.This is the scene layout: {layout}. 
+6.This is the layout of door and windows: {structure}
 
 Please take a moment to relax and carefully look through each object and their relations.
 What problem do you think it has? 
@@ -56,7 +57,10 @@ def update_scene_ds(user_demand,ideas,iter,roomtype):
     roomsize = [layout["roomsize"][0]*100, layout["roomsize"][1]*100]
     roomsize = lst2str(roomsize)
 
+    
+    structure = dict2str(layout["structure"])
     layout = layout["objects"]
+    
     for objname in layout:
         layout[objname]["location"] = [int(100*x) for x in layout[objname]["location"]]
         layout[objname]["size"] = [int(100*x) for x in layout[objname]["size"]]
@@ -64,7 +68,7 @@ def update_scene_ds(user_demand,ideas,iter,roomtype):
     
     system_prompt_1 = system_prompt 
     user_prompt_1 = user_prompt.format(roomtype=roomtype,roomsize=roomsize,layout=layout,
-                                       user_demand=user_demand,ideas=ideas) 
+                                       structure=structure,user_demand=user_demand,ideas=ideas) 
         
     ds = DeepSeek()
 

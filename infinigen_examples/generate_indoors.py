@@ -79,7 +79,7 @@ logger = logging.getLogger(__name__)
 all_vars = [cu.variable_room, cu.variable_obj]
 
 @gin.configurable
-def compose_indoors(output_folder: Path, scene_seed: int, iter, action, json_name, description, **overrides):
+def compose_indoors(output_folder: Path, scene_seed: int, iter, action, json_name, description, inplace, **overrides):
     height = 1
 
 
@@ -112,7 +112,7 @@ def compose_indoors(output_folder: Path, scene_seed: int, iter, action, json_nam
             case _ :
                 raise ValueError(f"Action is wrong: {action}") 
     else:
-        if action=="add_acdc" and os.path.exists(f"record_files/state_{iter}.pkl"):
+        if action=="add_acdc" and inplace:
             load_iter = iter
         else:
             load_iter = iter - 1
@@ -140,6 +140,8 @@ def compose_indoors(output_folder: Path, scene_seed: int, iter, action, json_nam
                 state,solver = update_graph.update(solver,state,p)
             case "modify":
                 state,solver = update_graph.modify(stages,limits,solver,p)
+            case "add_relation":
+                state,solver = update_graph.add_new_relation(stages,limits,solver,p)
             case "finalize_scene":
                 solved_rooms = [bpy.data.objects.get(bpy.data.objects['newroom_0-0'])]
                 height = complete_structure.finalize_scene(overrides,stages,state,solver,output_folder,p,terrain,solved_rooms,house_bbox,camera_rigs)
@@ -147,11 +149,9 @@ def compose_indoors(output_folder: Path, scene_seed: int, iter, action, json_nam
                 raise ValueError(f"Action is wrong: {action}") 
         
     solver.del_no_relation_objects()
-    save_path = "debug.blend"
-    bpy.ops.wm.save_as_mainfile(filepath=save_path)
+    
     state,solver = solve_objects.solve_large_object(stages,limits,solver,state,p,consgraph,overrides)
-    save_path = "debug2.blend"
-    bpy.ops.wm.save_as_mainfile(filepath=save_path)
+
     # state,solver = solve_objects.solve_medium_object(stages,limits,solver,state,p,consgraph,overrides)
     # state,solver = solve_objects.solve_small_object(stages,limits,solver,state,p,consgraph,overrides)
     record.record_scene(state,solver,terrain,house_bbox,solved_bbox,camera_rigs,iter,p)
@@ -183,6 +183,7 @@ def main(args):
         action=args.action,
         json_name=args.json_name,
         description=args.description,
+        inplace=args.inplace,
         populate_scene_func=None,
         input_folder=args.input_folder,
         output_folder=args.output_folder,
@@ -198,6 +199,7 @@ if __name__ == "__main__":
     parser.add_argument("--action", type=str, default="init_physcene")
     parser.add_argument("--json_name", type=str, default="")
     parser.add_argument("--description", type=str, default="")
+    parser.add_argument("--inplace", type=str, default="")
     parser.add_argument("--output_folder", type=Path)
     parser.add_argument("--input_folder", type=Path, default=None)
     parser.add_argument(
@@ -258,6 +260,7 @@ if __name__ == "__main__":
         args.iter = j["iter"]
         args.action = j["action"]
         args.description = j["description"]
+        args.inplace = j["inplace"]
         args.json_name = j["json_name"]
 
     os.system(f"cp args.json args_{args.iter}.json")

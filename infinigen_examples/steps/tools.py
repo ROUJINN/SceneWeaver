@@ -19,6 +19,7 @@ import dill
 import trimesh
 import trimesh.parent
 from infinigen.core import tags as t
+from infinigen_examples.util import constraint_util as cu
 
 def change_attr(obj, condition, replace_attr, visited=None, path=""):
     """
@@ -98,6 +99,8 @@ def recover_attr(obj, condition, reconver_func, visited=None, path=""):
 
         visited.add(obj_id)
         print(path)
+        if "sofa_fabric" in path:
+            a  =1
         d = vars(obj)
         lst = list(d.keys())
         # for attr_name, attr_value in vars(obj).items():
@@ -144,18 +147,70 @@ def recover_attr(obj, condition, reconver_func, visited=None, path=""):
 
     return results
 
+
+def export_relation(relation):
+    
+    child_tags = relation.child_tags
+    parent_tags = relation.parent_tags
+    margin = relation.margin
+    
+    if child_tags == cu.bottom and parent_tags == cu.floortags and margin == 0.01:
+        relname = "onfloor"
+    elif child_tags == cu.back and parent_tags == cu.walltags and margin == 0.07:
+        relname = "against_wall"
+    elif child_tags == cu.side and parent_tags == cu.walltags and margin == 0.05:
+        relname = "side_against_wall"
+    elif child_tags == cu.bottom and parent_tags == cu.top:
+        relname = "ontop"
+    elif child_tags == cu.bottom and parent_tags == {t.Subpart.SupportSurface, -t.Subpart.Top}:
+        relname = "on"
+    elif child_tags == cu.front and parent_tags == cu.side and margin==0.05:
+        relname = "front_against"
+    elif child_tags == cu.front and parent_tags == cu.front and margin==0.05:
+        relname = "front_to_front"
+    elif child_tags == cu.leftright and parent_tags == cu.leftright:
+        relname = "leftright_leftright"
+    elif child_tags == cu.side and parent_tags == cu.side:
+        relname = "side_by_side"
+    elif child_tags == cu.back and parent_tags == cu.back:
+        relname = "back_to_back"
+    else:
+        a = 1
+
+    return relname
+
+
 def export_layout(state,solver,save_dir):
     import json
     results = dict()
     results["objects"] = dict()
+    results["structure"] = dict()
     results["roomsize"] = [solver.dimensions[0],solver.dimensions[1]]
+    children_map = dict()
     for objkey,objinfo in state.objs.items():
-        if objkey.startswith("window") or objkey.startswith("entrance") or objkey.startswith("newroom_0-0"):
+        if objkey.startswith("newroom_0-0"):
             continue
-        results["objects"][objkey] = dict()
-        results["objects"][objkey]["location"] = [round(a, 2) for a in list(objinfo.obj.location)]
-        results["objects"][objkey]["rotation"] = [round(a, 2) for a in list(objinfo.obj.rotation_euler)]
-        results["objects"][objkey]["size"] = [round(a, 2) for a in list(objinfo.obj.dimensions)]
+        elif objkey.startswith("window") or objkey.startswith("entrance"):
+            results["structure"][objkey] = dict()
+            results["structure"][objkey]["location"] = [round(a, 2) for a in list(objinfo.obj.location)]
+            results["structure"][objkey]["rotation"] = [round(a, 2) for a in list(objinfo.obj.rotation_euler)]
+            results["structure"][objkey]["size"] = [round(a, 2) for a in list(objinfo.obj.dimensions)]
+        else:
+            results["objects"][objkey] = dict()
+            results["objects"][objkey]["location"] = [round(a, 2) for a in list(objinfo.obj.location)]
+            results["objects"][objkey]["rotation"] = [round(a, 2) for a in list(objinfo.obj.rotation_euler)]
+            results["objects"][objkey]["size"] = [round(a, 2) for a in list(objinfo.obj.dimensions)]
+            parent_relations = [[rel.target_name,export_relation(rel.relation)] for rel in objinfo.relations]
+            results["objects"][objkey]["parent"] = parent_relations
+            # parent_names = [rel.target_name for rel in objinfo.relations if rel.target_name!="newroom_0-0"]
+            # for name in parent_names:
+            #     if name not in children_map:
+            #         children_map[name] = []
+            #     children_map[name].append(objkey)
+            # results["objects"][objkey]["parent"] = parent_names
+
+    # for objkey in results["objects"]:
+    #     results["objects"][objkey]["children"] = children_map[objkey] if objkey in children_map else []
 
     with open(save_dir,"w") as f:
         json.dump(results,f,indent=4)
@@ -423,7 +478,7 @@ def load_record(iter):
 
     save_path = f"record_files/scene_{iter}.blend"
    
-    if not bpy.data.objects.get("newroom_0-0") and iter!=0:
+    if not bpy.data.objects.get("newroom_0-0"):
         bpy.ops.wm.open_mainfile(filepath=save_path,load_ui=False,use_scripts=False)
     # invisible_others()
     # bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)

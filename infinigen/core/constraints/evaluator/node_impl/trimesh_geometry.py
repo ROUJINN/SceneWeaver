@@ -324,6 +324,14 @@ def any_touching_expand(
     bvh_cache=None,
     # obj_info=None,
 ):  # MAKR
+    # if b=='BookStackFactory(970653).spawn_placeholder(5672192)' or a=='BookStackFactory(970653).spawn_placeholder(5672192)':
+    #     mesh1 = scene.geometry['window_mesh'] 
+    #     mesh2 = scene.geometry['newroom_0-0_mesh'] 
+    #     mesh3 = scene.geometry['BookStackFactory(683150).spawn_placeholder(5781023)_mesh'] 
+    #     mesh4 = scene.geometry['MetaCategoryFactory(539113).bbox_placeholder(7256991)_mesh'] 
+    #     mesh5 = scene.geometry['BookStackFactory(970653).spawn_placeholder(5672192)_mesh']
+    #     scene1 = trimesh.Scene([mesh1,mesh2,mesh3,mesh4,mesh5])
+    #     scene1.show()
     """
     Computes one-to-one, many-to-one, one-to-many or many-to-many collisions
 

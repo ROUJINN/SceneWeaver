@@ -56,6 +56,8 @@ class ObjaverseCategoryFactory(ObjaverseFactory):
         else: 
             object_names = Retriever.retrieve_object_by_cat(self.category)
             object_names = [name for name, score in object_names if score > 30]
+            object_names = [obj_name for obj_name in object_names if os.path.exists(f"{basedir}/{obj_name}")]
+            object_names = object_names[:3]
             random.shuffle(object_names)
 
             for obj_name in object_names:

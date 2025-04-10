@@ -85,6 +85,8 @@ class GPT4(GPT4o):
             "max_tokens": 4096,
         }
         return object_caption_payload
+    
+
 
     def get_payload_scene_image(self, prompting_text_system, prompting_text_user,render_path=None):
         text_dict_system = {"type": "text", "text": prompting_text_system}
@@ -129,8 +131,7 @@ class GPT4(GPT4o):
             candidates_fpaths,
     ):
         """
-        Given a list of candidate snapshots, return the payload used to find the nearest neighbor in terms of
-        orientation.
+        Given a list of candidate snapshots, return the payload used to find the nearest neighbor in terms of orientation.
 
         Returns:
             dict: Prompt payload
@@ -138,7 +139,7 @@ class GPT4(GPT4o):
         # Getting the base64 string
         cand_imgs_base64 = [self.encode_image(img) for img in candidates_fpaths]
 
-        prompt_text_system = f"You have been given four images of an {category}, each taken from a different angle. Your task is to identify the image that shows the 'front view' of the object. The front view refers to the perspective where the object's main face or most important features are most clearly visible, typically from the viewer’s point of view.\n\n" + \
+        prompt_text_system = f"You have been given 2 or 4 images of an {category}, each taken from a different angle. Your task is to identify the image that shows the 'front view' of the object. The front view refers to the perspective where the object's main face or most important features are most clearly visible, typically from the viewer’s point of view.\n\n" + \
                              "Please keep the following in mind:\n" + \
                              "1. The front view is often characterized by the most significant or most visible face of the object.\n" + \
                              "2. For objects like cabinets, the front view is typically where the doors and drawers are visible. For chairs, the front view may show the seat and backrest. For other objects, consider the main or most notable side visible from the viewer's point of view.\n" + \
@@ -146,7 +147,7 @@ class GPT4(GPT4o):
                              "4. If the images are taken at different angles (front, right, left, back), choose the image where the object faces you (from the viewer’s perspective).\n" + \
                              "5. Given these considerations, please only return the index number of the image that represents the 'front view'. The indices of the images start from 0.\n" + \
                              "6. Retun only the index number without any other words.\n"+\
-                             "Example output:2" 
+                             "Example output:1" 
         content_system = [
             {
                 "type": "text",

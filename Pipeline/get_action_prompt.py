@@ -14,7 +14,7 @@ We have four methods to design or modify a 3D scene, each with different strengt
 Method 1: Load real2sim indoor scene data
   Data Prior: Yes
   Supported Room Types: Living room, dining room, bedroom, bathroom, office, and classroom.
-  Use Case: Ideal for generating foundational layouts for common room types.
+  Use Case 1: Ideal for generating foundational layouts for common room types.
   Strengths: Provides a ready-made, realistic layout based on real-world data. Easy to implement.
   Weaknesses: Limited room type diversity compared to other methods.
 
@@ -22,29 +22,32 @@ Method 2: Scene synthesis by neural network
   Data Prior: Yes
   Model: Trained on the 3D Front indoor dataset.
   Supported Room Types: Living room, bedroom, and dining room.
-  Use Case: Creates a foundational layout for common room types.
+  Use Case 1: Creates a foundational layout for common room types.
   Strengths: Fast and flexible, making it ideal for rapid scene prototyping. Offers diverse configurations for living room, bedroom, and dining room.
   Weaknesses: Less accurate compared to method 1 (real2sim) and other more data-driven methods.
 
 Method 3: Image generation + 3D reconstruction
   Data Prior: 2D image prior
-  Use Case: Suitable for adding small objects on the top of a large furniture, such as a table, cabinet, and desk.
-  How It Works: We use Stable Diffusion to generate images, then apply 3D reconstruction techniques to convert the image into a full 3D scene.
+  Use Case 1: When there is nothing on the large furniture (such as a table, cabinet, and desk), use this method to add some small objects on it.
   Strengths: Excellent for adding a group of objects on the top of a large furniture.(e.g., enriching a tabletop).
-  Weaknesses: More time-consuming and complex than other methods. Not as effective for generating the entire scene or layout. Can not add objects on the wall, ground, or ceiling. Can not add objects inside a container, such as shelf, drawer, and cabinet.
+  Weaknesses: Can not add objects inside a container, such as objects in the shelf. Weak in generating the entire scene or layout. Can not add objects on the wall, ground, or ceiling. 
 
 Method 4: Generate/implement scene with GPT
   Data Prior: LLM prior
   Room Type Diversity: Not limited to any specific room types.
-  Use Case: Recommended for designing room types that are not supported by methods 1 or 2 (e.g., more niche or custom room types). Also recommended for adding objects in the current scene, especially when method 3 does not work.
-  Strengths: Highly versatile and capable of generating scenes for any room type. Flexible with respect to room design and customization. Also expert in adding a single object (e.g., add a cup on the table or a book in the shelf).
-  Weaknesses: May not be as real or accurate as data-driven methods.
+  Use Case 1: Design room types that are not supported by methods 1 or 2 (e.g., more niche or custom room types). 
+  Use Case 2: Add large objects in the current scene.
+  Use Case 3: Add small objects in/on the large furniture, especially when method 3 does not work. (e.g., add a cup on the table or a book in the shelf).
+  Strengths: Highly versatile and capable of generating scenes for any room type. Flexible with respect to room design and customization. Also expert in adding a single object 
+  Weaknesses: May not be as real or accurate as data-driven methods. Can not add objects on the wall, ground, or ceiling. 
 
 Method 5: Modify layout with GPT
   Data Prior: LLM prior
   Room Type Diversity: Works with all room types.
-  Use Case: Best for refining layouts by adjusting object placement or removing redundant elements when the existing arrangement is suboptimal.
-  Strengths: Highly flexible and adaptable to various room designs. Excels at modifying or removing specific objects (e.g., repositioning a chair or eliminating a table in the corner).
+  Use Case 1: When the layout has collision, out of room, or inproper placement, use this method to refine layouts by adjusting object placement. (e.g., reposition a chair)
+  Use Case 2: When some object is redundant, use this method to remove redundant objects. (e.g., eliminate a table in the corner)
+  Use Case 3: Add relations to some objects to make the room tidy.
+  Strengths: Highly flexible and adaptable to various room designs. Excels at modifying or removing specific objects.
   Weaknesses: May lack precision and occasionally overlook details. Can not add objects.
 
 Decision-Making Guide:
@@ -52,8 +55,11 @@ Based on the scene data, available methods, and specific requirements of the use
 
 If you need a foundational layout quickly, Method 1 offers the highest accuracy, while Method 2 provides greater flexibility and speed.
 For unique or complex room types, Method 4 (Generated Scene with GPT) is ideal for creating a custom layout when other approaches fall short.
-For detailed additions or partial scene enhancements, both Method 3 (Image Generation + 3D Reconstruction) and Method 4 (Generated Scene with GPT) are effective. Method 3 produces more realistic results, while Method 4 offers greater precision.
-For object removal and layout modifications, Method 5 (Modify layout with GPT) is the best choice.
+For detailed additions or partial scene enhancements, Method 4 (Generated Scene with GPT) are effective to add large furniture as well as implement details inside large furniture (such as add objects inside the shelf).
+To add small objects on the large furniture's top (when there is nothing on it), use Method 3 (Image Generation + 3D Reconstruction) to add some small objects on it. (e.g., enriching a tabletop).
+When the layout has collision, out of room, or inproper placement, use Method 5 (Modify layout with GPT) to refine layouts and add relations.
+When some object is redundant, use Method 5 to remove redundant objects.
+
 To achieve the best results, combine multiple methods over several iterations — start with a foundational layout and refine it progressively with finer details.
 
 """
@@ -75,8 +81,17 @@ To achieve the best results, combine multiple methods over several iterations �
 
 sceneinfo_prompt = """
 Layout: {scene_layout}.
-Rendered Image from the top view: SCENE_IMAGE.
+The Layout include each object's X-Y-Z Position, Z rotation, size (x_dim, y_dim, z_dim), as well as relation info with parents.
+
+A rendered image of the entire scene taken from the top view: SCENE_IMAGE.
 "None" means the scene is empty.
+
+**3D Convention:**
+- Right-handed coordinate system.
+- The X-Y plane is the floor; the Z axis points up. The origin is at a corner (the left-top corner of the rendered image), defining the global frame.
+- Asset front faces point along the positive X axis. The Z axis points up. The local origin is centered in X-Y and at the bottom in Z. 
+A 90-degree Z rotation means that the object will face the positive Y axis. The bounding box aligns with the assets local frame.
+
 """
 
 feedback_reflections_prompt = """
@@ -108,16 +123,20 @@ feedback_reflections_prompt_system = """
 {methods_prompt}
 """
 
+
+# Previous Guide/Action:
+# {previous_guide}
+# The feedback shows results of previous action.
+# If previous step failed in adding some objects, it means the attempt is invalid. Do not try again.
+
+
 feedback_reflections_prompt_user = """
 User’s Prompt: {user_demand}
 RoomType: {roomtype}
 Current Iteration: {iter}
 
-Previous Guide/Action:
+Previous Method and Ideas:
 {previous_guide}
-The feedback shows results of previous action.
-If previous step failed in adding some objects, it means the attempt is invalid. Do not try again.
-
 
 Current Scene:
 {sceneinfo_prompt}
@@ -126,7 +145,8 @@ Describe the scene based on the provided image and the current data.
 Analyze the scene and propose some improvements. You can consider the following factors:
 
 Initial Scene Construction: If the scene is empty or lacks a foundational structure, what is the best method to generate a basic layout that fits the user's prompt (e.g., living room, office)?
-Adding Furniture and Objects: If the scene feels sparse, assess whether more furniture needs to be added to the ground or corners, or if additional small objects should be placed on shelves, desks, or tables.
+Adding Large Furniture: If the scene feels sparse, assess whether more furniture needs to be added to the ground or corners.
+Adding Small Objects: Add some small objects (such as in shelves, on desks, or on tables) to enrich the details. But do not make it crowded.
 Detailing: Evaluate if the scene could benefit from small decorative items or functional objects placed inside or on top of furniture (e.g., books, lamps, plants).
 Collision and Layout Issues: Check if there are any collisions or improper placements of objects that disrupt the flow of the room. Do any objects need repositioning or resizing for better usability or aesthetic?
 User Prompt Satisfaction: Does the current scene meet the user's prompt requirements? What needs to be changed or added to align with the prompt more closely?
@@ -139,7 +159,7 @@ Make your choice based on which method will achieve the highest quality and effi
 Main Goal for the Next Iteration:
 Identify the most crucial improvement that should be made in this iteration based on the Analysis. This should address the most pressing issue and make the biggest impact on the overall scene.
 
-You may update the scene over multiple iterations, and you can select the most appropriate method(s) for each iteration. It’s often useful to leverage different methods in various iterations to make incremental improvements.
+You may update the scene over multiple iterations, and you can select the most appropriate method (only one) for each iteration. It’s often useful to leverage different methods in various iterations to make incremental improvements.
 
 Recommended Approach & Method(s) for 5 Iterations:
 You can consider using a sequence of methods that build on each other in multiple iterations. A sample approach could be:

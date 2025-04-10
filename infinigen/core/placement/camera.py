@@ -120,6 +120,7 @@ def spawn_camera():
 
 
 def camera_name(rig_id, cam_id):
+    CAMERA_RIGS_DIRNAME = "CameraRigs"
     return f"{CAMERA_RIGS_DIRNAME}/{rig_id}/{cam_id}"
 
 
@@ -128,6 +129,7 @@ def spawn_camera_rigs(
     camera_rig_config,
     n_camera_rigs,
 ):
+    CAMERA_RIGS_DIRNAME = "CameraRigs"
     def spawn_rig(i):
         rig_parent = butil.spawn_empty(f"{CAMERA_RIGS_DIRNAME}/{i}")
         for j, config in enumerate(camera_rig_config):
@@ -148,6 +150,7 @@ def spawn_camera_rigs(
 
 def get_cameras_ids() -> list[tuple]:
     res = []
+    CAMERA_RIGS_DIRNAME = "CameraRigs"
     col = bpy.data.collections[CAMERA_RIGS_DIRNAME]
     rigs = [o for o in col.objects if o.name.count("/") == 1]
     for i, root in enumerate(rigs):
@@ -159,6 +162,7 @@ def get_cameras_ids() -> list[tuple]:
 
 
 def get_camera(rig_id, subcam_id, checkonly=False):
+    CAMERA_RIGS_DIRNAME = "CameraRigs"
     col = bpy.data.collections[CAMERA_RIGS_DIRNAME]
     name = camera_name(rig_id, subcam_id)
     if name in col.objects.keys():

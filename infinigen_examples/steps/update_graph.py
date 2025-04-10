@@ -40,6 +40,15 @@ def modify(solver,state,p):
     )
     return state
 
+def add_new_relation(solver,state,p): 
+    def add_relation(): 
+        solver.modify_graph()
+        return solver.state
+    state = p.run_stage(
+        "add_relation", add_relation, use_chance=False, default=state
+    )
+    return state
+
 def update(solver,state,p): 
     def update_graph(): 
         solver.update_graph()

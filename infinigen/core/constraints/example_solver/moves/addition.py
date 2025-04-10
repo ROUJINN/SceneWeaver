@@ -45,7 +45,10 @@ def sample_rand_placeholder(gen_class: type[AssetFactory], dimension=None):
     if singleton_gen and gen_class in GLOBAL_GENERATOR_SINGLETON_CACHE:
         gen = GLOBAL_GENERATOR_SINGLETON_CACHE[gen_class]
     else:
+        fac_seed_lst = [obj.name.split(")")[0].split("(")[-1] for obj in bpy.data.objects]
         fac_seed = np.random.randint(1e7)
+        while str(fac_seed) in fac_seed_lst:
+            fac_seed = np.random.randint(1e7)
         gen = gen_class(fac_seed)
         if singleton_gen:
             GLOBAL_GENERATOR_SINGLETON_CACHE[gen_class] = gen

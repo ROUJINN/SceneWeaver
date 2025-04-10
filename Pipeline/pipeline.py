@@ -10,7 +10,7 @@ from gen_SD_prompt import gen_SD_prompt
 from get_roomsize import get_roomsize
 from gen_acdc_candidates import gen_ACDC_cand
 from match_scene import match_scene_id
-
+from add_relation_gpt import add_relation
 import os
 import random
 import json
@@ -129,8 +129,8 @@ def find_metascene(user_demand,ideas,roomtype):
     
     scenes = j["scenes"]
     
-    # scene_id = find_scene_id()
-    scene_id = "scene0653_00"
+    scene_id = find_scene_id()
+    # scene_id = "scene0035_00"
     json_name = scene_id
 
     with open("/mnt/fillipo/yandan/metascene/export_stage2_sm/roomsize.json","r") as f:
@@ -176,12 +176,13 @@ def gen_img_SD(SD_prompt,obj_id,obj_size):
     
     return img_filename
 
-def update_infinigen(action,iter,json_name,description=None):
+def update_infinigen(action,iter,json_name,description=None,inplace=False):
     j = {"iter":iter,
          "action":action,
          "json_name":json_name,
         #  "roomsize": roomsize,
-         "description":description}
+         "description":description,
+         "inplace":inplace}
     
     with open(f"/home/yandan/workspace/infinigen/args.json","w") as f:
         json.dump(j,f,indent=4)
@@ -207,6 +208,10 @@ def acdc(img_filename,obj_id,category):
     
     return json_name
 
+def add_init_relation(user_demand,ideas,roomtype):
+    json_name = add_relation(user_demand,ideas,iter,roomtype)
+    return json_name
+
 def update_gpt(user_demand,ideas,iter,roomtype):
     json_name = update_scene_gpt(user_demand,ideas,iter,roomtype)
     return json_name
@@ -216,23 +221,18 @@ def update_ds(user_demand,ideas,iter,roomtype):
     return json_name
 
 
-# def choose_solve():
-#     return solve_action
-
-
-iter = 0
+iter = 10
 # user_demand = "An office room for 8 people."
-user_demand = "A game room for a 6-year-old boy."
+user_demand = "Design me a bedroom."  #"A classic Chinese dining room."
 
-while(iter<10):
+while(iter<20):
     if iter == 0:
         action, ideas, roomtype = get_action(user_demand,iter)
-        # action = "init_physcene"
-        # ideas = "Create a basic layout for a modern living room with a large sofa and coffee table."
-
+        # action = "init_metascene"
+        # ideas = "Create a basic bedroom layout including essential furniture like a bed, wardrobe, and nightstands.",
         # action='init_gpt'
         # ideas='Create a foundational layout for an office room designed for 8 people, including desks, chairs, and basic office equipment.'
-        roomtype = 'living room'
+        roomtype = 'bedroom'
         if action == "init_physcene":
             json_name,roomsize = find_physcene(user_demand,ideas,roomtype)
             roomsize = get_roomsize(user_demand,ideas,roomsize,roomtype)
@@ -254,13 +254,16 @@ while(iter<10):
                     }
             json.dump(info,f,indent=4)
         update_infinigen(action,iter,json_name)
+        if action == "init_physcene" or action=="init_metascene":
+            json_name = add_init_relation(user_demand,ideas,roomtype)
+            update_infinigen("add_relation",iter,json_name,inplace=True)
     else:
         action = None
         while action is None:
             action, ideas, roomtype  = get_action(user_demand,iter)#,ds=True)
-        # action = "add_gpt"
-        # ideas = "Add objects on the dining table."
-        # roomtype = 'living room'
+        # action = "add_acdc"
+        # ideas = 'Add a lamp on the nightstand, books on the shelf, and a plant on the desk.'
+        # roomtype = 'bedroom'
         
         # action = "add_acdc"
         # ideas = "Add computers on each desk, small plants, and personal items like notepads and pens.",
@@ -272,19 +275,25 @@ while(iter<10):
                 
         elif action == "add_acdc":
             steps = prepare_acdc(user_demand,ideas,roomtype,iter)
-            # steps = {'1472557_SimpleDeskFactory': {'prompt for SD': 'A 120cm * 60cm * 70cm simple desk with a monitor, desk lamp, stack of documents, and a coffee mug.', 'obj category': 'desk', 'obj_id': '1472557_SimpleDeskFactory', 'obj_size': [...]}, '613680_SimpleDeskFactory': {'prompt for SD': 'A 120cm * 60cm * 70cm simple desk with a monitor, desk lamp, stack of documents, and a coffee mug.', 'obj category': 'desk', 'obj_id': '613680_SimpleDeskFactory', 'obj_size': [...]}, '7250081_SimpleDeskFactory': {'prompt for SD': 'A 120cm * 60cm * 70cm simple desk with a monitor, desk lamp, stack of documents, and a coffee mug.', 'obj category': 'desk', 'obj_id': '7250081_SimpleDeskFactory', 'obj_size': [...]}, '618251_SimpleDeskFactory': {'prompt for SD': 'A 120cm * 60cm * 70cm simple desk with a monitor, desk lamp, stack of documents, and a coffee mug.', 'obj category': 'desk', 'obj_id': '618251_SimpleDeskFactory', 'obj_size': [...]}, '4441751_whiteboard': {'prompt for SD': 'A 178cm * 10cm * 124cm whiteboard with meeting notes and schedules.', 'obj category': 'whiteboard', 'obj_id': '4441751_whiteboard', 'obj_size': [...]}}
+            # steps = {'9563833_nightstand': {'prompt for SD': 'An entire 54cm * 57cm * 59cm nightstand with a lamp on it.', 'obj category': 'nightstand', 'obj_id': '9563833_nightstand', 'obj_size': [...]}, '2552790_shelf': {'prompt for SD': 'An entire 74cm * 31cm * 73cm shelf with books on it.', 'obj category': 'shelf', 'obj_id': '2552790_shelf', 'obj_size': [...]}, '1133652_desk': {'prompt for SD': 'An entire 115cm * 57cm * 77cm desk with a plant on it.', 'obj category': 'desk', 'obj_id': '1133652_desk', 'obj_size': [...]}}
             # last_prompt = 'A 120cm * 60cm * 70cm simple desk with a monitor, desk lamp, stack of documents, and a coffee mug.'
             # last_img_filename = "/home/yandan/workspace/infinigen/Pipeline/record/SD_img.jpg"
             # last_json_name = "/home/yandan/workspace/infinigen/Pipeline/record/acdc_output/step_3_output/scene_0/scene_0_info.json"
             last_prompt = None
             last_img_filename = None
             last_json_name = None
+            inplace=False
             for obj_id, info in steps.items():
                 if last_prompt is None or info["prompt for SD"] != last_prompt:
-                    update_infinigen("export_supporter",iter,json_name="",description=obj_id)
-                    while True:
+                    # update_infinigen("export_supporter",iter,json_name="",description=obj_id)
+                    cnt = 0
+                    while True and cnt<5:
+                        cnt += 1
                         print(info["prompt for SD"])
                         img_filename = gen_img_SD(info["prompt for SD"],obj_id,info["obj_size"]) #execute until satisfy the requirement
+                        # img_filename = '/home/yandan/workspace/infinigen/Pipeline/record/SD_img.jpg'
+
+
                         json_name = acdc(img_filename,obj_id,info["obj category"])
                         
                         with open("/home/yandan/workspace/digital-cousins/args.json","r") as f:
@@ -300,7 +309,8 @@ while(iter<10):
                 last_img_filename = img_filename
                 last_json_name = json_name
 
-                update_infinigen(action,iter,json_name,description=obj_id)
+                update_infinigen(action,iter,json_name,description=obj_id,inplace=inplace)
+                inplace=True
             
         elif action == "update":
             json_name = update_gpt(user_demand,ideas,iter,roomtype)

@@ -34,7 +34,7 @@ def generate_scene_iter1_ds(user_demand,ideas,iter):
     # gpt_dict_response = {
     #             "User demand": "A cozy living room with a modern aesthetic, featuring a large sofa, a coffee table.",
     #             "Roomsize": [9.5, 4.0],
-    #             "List of new furniture": {"Plate": "2", "Bowl": "1", "Vase": "1", "FruitContainer": "1"},
+    #             "Number of new furniture": {"Plate": "2", "Bowl": "1", "Vase": "1", "FruitContainer": "1"},
     #             "category_against_wall": [],
     #             "Relation": [
     #                 ["vase", "dining_table", "ontop"],

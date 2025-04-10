@@ -66,14 +66,14 @@ class TranslateMove(moves.Move):
 
     def apply_gradient(self, state: State, temperature=None, expand_collision=False):
         (target_name,) = self.names
-       
-       
+
         os = state.objs[target_name]
 
         obj_state = state.objs[target_name]
+        # print(target_name, "1 ",obj_state.obj.location)
 
         parent_planes = apply_relations_surfacesample(
-            state, target_name, use_initial=True
+            state, target_name, use_initial=True,closest_surface=True
         )
         obj_state.dof_matrix_translation = combined_stability_matrix(
             parent_planes
@@ -81,7 +81,7 @@ class TranslateMove(moves.Move):
         obj_state.dof_rotation_axis = combine_rotation_constraints(
             parent_planes
         )  # 旋转自由度的约束轴或限制信息
-            
+        # print(target_name, "2 ",obj_state.obj.location)
         # result = validity.check_post_move_validity(
         result = validity.move_for_relation_and_collision(
             state,
@@ -91,14 +91,16 @@ class TranslateMove(moves.Move):
             use_initial=True,
         )
 
-
+        # print(target_name, "3 ",obj_state.obj.location)
         success, touch = result
 
         self._backup_pose = pose_backup(os, dof=False)
 
-        invisible_others()
-        bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
-        visible_others()
+        # invisible_others()
+        # bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
+        # visible_others()
+        # import pdb
+        # pdb.set_trace()
         if touch is None:
             # relation invalid, have moved to make it valid
             return False
@@ -124,14 +126,18 @@ class TranslateMove(moves.Move):
             state.trimesh_scene, state, target_name, touch
         )
         iu.translate(state.trimesh_scene, os.obj.name, self.translation)
+        # print(target_name, "4 ",obj_state.obj.location)
         # print(target_name,self.translation)
         self._backup_pose = pose_backup(os, dof=False)
         # invisible_others()
         # bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
         # visible_others()
+        # pdb.set_trace()
         return success
+    
 
     def calc_gradient(self, scene, state, name, touch):
+
         obj_state = state.objs[name]
        
         # record top children
@@ -143,37 +149,80 @@ class TranslateMove(moves.Move):
                     childnames.add(os.obj.name)
 
         a = obj_state.obj.name
-        T, g = scene.graph[a]  # 获取 b 的变换和几何信息
-        geom_a = scene.geometry[g]
-        centroid_a = geom_a.centroid
-
-        centroid_b_lst = []
         b_names = []
+        gradient = np.zeros(3)
+        valid_names = [x for x in touch.names if x!=a]
+        
         # for _, b in touch.names:
-        for b in touch.names:
+        for i in range(len(valid_names)):
+            b = valid_names[i]
+            normal = touch.contacts[i].normal
+            depth = touch.contacts[i].depth
+
             if b in childnames or b==state.objs[name].obj.name: # remove top children's collision
                 continue
-            T, g = scene.graph[b]  # 获取 b 的变换和几何信息
-            geom_b = scene.geometry[g]
-            centroid_b = geom_b.centroid
+      
             if b not in b_names:
                 b_names.append(b)
-                centroid_b_lst.append(centroid_b)
+                gradient += normal*depth
 
-        if centroid_b_lst==[]:
-            return [0,0,0]
-        
-        centroid_b_mean = np.mean(centroid_b_lst, axis=0)
-        if "FloorLampFactory" in name:
-            a = 1
-
-        gradient = centroid_a - centroid_b_mean
+        gradient[2] = 0
         gradient_norm = np.linalg.norm(gradient)
-        gradient = gradient / gradient_norm
-        TRANS_MULT = 0.05
+        if len(b_names) == 0 or gradient_norm==0:
+            gradient = np.zeros(3)
+        else:
+            gradient = gradient / gradient_norm
+        TRANS_MULT = 0.1
         translation = TRANS_MULT * obj_state.dof_matrix_translation @ gradient
 
         return translation
+
+    # def calc_gradient(self, scene, state, name, touch):
+    #     if name=="1753306_BookStackFactory":
+    #         import pdb
+    #     #     pdb.set_trace()
+    #     obj_state = state.objs[name]
+       
+    #     # record top children
+    #     childnames = set()
+    #     for k,os in state.objs.items():
+    #         for rel in os.relations:
+    #             if rel.target_name==name and \
+    #                 (Subpart.SupportSurface in rel.relation.parent_tags or Subpart.Top in rel.relation.parent_tags):
+    #                 childnames.add(os.obj.name)
+
+    #     a = obj_state.obj.name
+    #     T, g = scene.graph[a]  # 获取 b 的变换和几何信息
+    #     geom_a = scene.geometry[g]
+    #     centroid_a = geom_a.centroid
+
+    #     centroid_b_lst = []
+    #     b_names = []
+    #     # for _, b in touch.names:
+    #     for b in touch.names:
+    #         if b in childnames or b==state.objs[name].obj.name: # remove top children's collision
+    #             continue
+    #         T, g = scene.graph[b]  # 获取 b 的变换和几何信息
+    #         geom_b = scene.geometry[g]
+    #         centroid_b = geom_b.centroid
+    #         if b not in b_names:
+    #             b_names.append(b)
+    #             centroid_b_lst.append(centroid_b)
+
+    #     if centroid_b_lst==[]:
+    #         return [0,0,0]
+        
+    #     centroid_b_mean = np.mean(centroid_b_lst, axis=0)
+    #     if "FloorLampFactory" in name:
+    #         a = 1
+
+    #     gradient = centroid_a - centroid_b_mean
+    #     gradient_norm = np.linalg.norm(gradient)
+    #     gradient = gradient / gradient_norm
+    #     TRANS_MULT = 0.05
+    #     translation = TRANS_MULT * obj_state.dof_matrix_translation @ gradient
+
+    #     return translation
 
 
 @dataclass
