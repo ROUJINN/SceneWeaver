@@ -10,7 +10,7 @@ import sys
 
 def generate_scene_iter0(user_demand,ideas,roomtype):
 
-    gpt = GPT4()
+    gpt = GPT4(version="4o")
 
     results = dict()
 

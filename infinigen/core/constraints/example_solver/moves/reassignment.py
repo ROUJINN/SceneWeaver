@@ -8,10 +8,11 @@
 
 import copy
 from dataclasses import dataclass
-
+import bpy
 from infinigen.core.constraints.constraint_language.util import sync_trimesh
 from infinigen.core.constraints.example_solver.geometry import dof
 from infinigen.core.constraints.example_solver.state_def import ObjectState, State
+from infinigen_examples.util.visible import invisible_others, visible_others
 
 from . import moves
 
@@ -68,7 +69,9 @@ class RelationPlaneChange(moves.Move):
         success = dof.try_apply_relation_constraints(
             state, target_name, expand_collision=expand_collision
         )
-       
+        invisible_others()
+        bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
+        visible_others()
         return success
 
     def revert(self, state: State):

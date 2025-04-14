@@ -74,7 +74,7 @@ def gen_ACDC_cand(user_demand,ideas,roomtype,iter):
         size_new = [size[1],size[0],size[2]]
         layout[key]["size"] = size_new
 
-    gpt = GPT4()
+    gpt = GPT4(version="4o")
 
     user_prompt_1 = user_prompt.format(user_demand=user_demand,
                                        ideas=ideas,

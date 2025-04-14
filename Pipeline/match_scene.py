@@ -42,7 +42,7 @@ Example Input:
 }
 
     
-Expected Output:
+Expected Output (only return scene_id):
 scene0002_00
 
 """
@@ -64,7 +64,7 @@ def match_scene_id(category_counts,user_demand,ideas,roomtype):
                                        ideas=ideas,
                                        category_counts = category_counts) 
         
-    gpt = GPT4()
+    gpt = GPT4(version="4o")
 
     prompt_payload = gpt.get_payload(system_prompt, user_prompt_1)
     gpt_text_response = gpt(payload=prompt_payload, verbose=True)

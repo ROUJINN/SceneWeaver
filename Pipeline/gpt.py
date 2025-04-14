@@ -23,7 +23,7 @@ class GPT4(GPT4o):
         self.version = version
         MODEL = self.VERSIONS[version]
         self.MODEL = MODEL
-        REGION = "eastus2"
+        REGION = "southcentralus"
         super().__init__(MODEL, REGION)
 
     def __call__(self, payload, verbose=False):
@@ -85,8 +85,35 @@ class GPT4(GPT4o):
             "max_tokens": 4096,
         }
         return object_caption_payload
+    
+    def get_payload_eval(self, prompting_text_user,render_path):
+        if render_path is not None:
+            imgs_base64 = self.encode_image(render_path) 
+            img_dict = {
+                "type": "image_url",
+                "image_url": {
+                    "url": f"data:image/png;base64,{imgs_base64}"
+                }
+            }
+
+            prompting_user_lst = prompting_text_user.split("SCENE_IMAGE")
+            content_user = [{"type": "text", "text": prompting_user_lst[0]},
+                            img_dict]
+        else:
+            content_user = [{"type": "text", "text": prompting_text_user}]
+
+        object_caption_payload = {
+            "model": self.MODEL,
+            "messages": [
+                {"role": "user", "content": content_user},
+            ],
+            "temperature": 0,
+            "max_tokens": 4096,
+        }
+        return object_caption_payload
 
     def get_payload_scene_image(self, prompting_text_system, prompting_text_user,render_path=None):
+       
         text_dict_system = {"type": "text", "text": prompting_text_system}
         content_system = [text_dict_system]
 

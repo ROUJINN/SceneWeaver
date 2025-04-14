@@ -96,7 +96,7 @@ obj_cnt = 0
 candidates_fpaths = []
 out_dict = dict()
 for scene_name in os.listdir(inbasedir):
-    # scene_name = "scene0035_00"
+    scene_name = "scene0292_00"
 
     outinfodir = f"{outbasedir}/{scene_name}/metadata.json"
     
@@ -160,7 +160,7 @@ for scene_name in os.listdir(inbasedir):
     
     with open(outinfodir,"w") as f:
         json.dump(out_dict,f,indent=4)
-    # break
+    break
 
     
         

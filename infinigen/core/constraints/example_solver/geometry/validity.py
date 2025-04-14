@@ -105,11 +105,11 @@ def check_post_move_validity(
     use_initial=False,
 ):  # MARK
 
-    collision_objs = []
-    for k, os in state.objs.items():
-        print(os.obj.name)
-        if k != name and t.Semantics.NoCollision not in os.tags:
-            collision_objs.append(os.obj.name)
+    # collision_objs = []
+    # for k, os in state.objs.items():
+    #     print(os.obj.name)
+    #     if k != name and t.Semantics.NoCollision not in os.tags:
+    #         collision_objs.append(os.obj.name)
     scene = state.trimesh_scene
     objstate = state.objs[name]
     

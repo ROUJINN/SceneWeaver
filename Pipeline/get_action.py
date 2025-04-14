@@ -11,13 +11,16 @@ idea_example = prompts.idea_example
 def load_previous_guide(iter):
     previous_guide = []
     for i in range(iter):
+        with open(f"/home/yandan/workspace/infinigen/Pipeline/record/metric_{i}.json","r") as f:
+            m = json.load(f)
         with open(f"record/get_action_iter_{i}.json","r") as f:
             j = json.load(f)
         info = {"iter": j["iter"],
                 # "Thoughts": j["Thoughts"],
                 # "Recommendation": j["Recommendation"],
                 "Method number": j["Method number"],
-                "Ideas": j["Ideas"]
+                "Ideas": j["Ideas"],
+                "Evaluate Score": m
                 }
         roomtype = j["RoomType"]
         previous_guide.append(dict2str(info))
@@ -42,7 +45,7 @@ def get_action0(user_demand = "Classroom",iter = 0):
                                                                                         sceneinfo_prompt=sceneinfo_prompt,
                                                                                         idea_example=idea_example
                                                                                         )
-    gpt = GPT4()
+    gpt = GPT4(version="4o")
 
     prompt_payload = gpt.get_payload_scene_image(feedback_reflections_system_payload, feedback_reflections_user_payload,render_path=None )
     gpt_text_response = gpt(payload=prompt_payload, verbose=True)

@@ -47,7 +47,8 @@ if __name__ == "__main__":
     args, unknown_args = parser.parse_known_args()
 
     import json
-    with open("args.json","r") as f:
+
+    with open("args.json", "r") as f:
         j = json.load(f)
         args.iter = j["iter"]
         args.inplace = j["inplace"]

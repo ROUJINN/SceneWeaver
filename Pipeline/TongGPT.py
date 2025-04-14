@@ -4,7 +4,7 @@ from openai import AzureOpenAI
 
 
 class TongGPT:
-    def __init__(self, MODEL="gpt-35-turbo-0125", REGION="eastus2"):
+    def __init__(self, MODEL="gpt-35-turbo-0125", REGION="westus"):
         super().__init__()
         self.REGION = REGION
         API_BASE = "https://api.tonggpt.mybigai.ac.cn/proxy"
@@ -13,7 +13,7 @@ class TongGPT:
         with open("/home/yandan/workspace/key.txt","r") as f:
             lines = f.readlines()
         self.API_KEY = lines[0].strip()
-        self.api_version = "2024-02-01"
+        self.api_version = "2025-03-01-preview" #"2024-02-01"
         self.init_client()
 
     def init_client(self):
@@ -37,7 +37,7 @@ class TongGPT:
 
 
 class GPT4o(TongGPT):
-    def __init__(self, MODEL="gpt-4-turbo-2024-04-09", REGION="eastus2"):
+    def __init__(self, MODEL="gpt-4-turbo-2024-04-09", REGION="westus"):
         super().__init__(MODEL, REGION)
 
     def send_request(self, payload):

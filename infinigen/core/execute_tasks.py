@@ -200,10 +200,12 @@ def execute_tasks(
     init.configure_blender()
 
     if Task.Coarse in task:
-        if iter==0:
+        if iter == 0:
             butil.clear_scene(targets=[bpy.data.objects])
             butil.spawn_empty(f"{infinigen.__version__=}")
-        info = compose_scene_func(output_folder, scene_seed, iter, action, json_name, description,inplace)
+        info = compose_scene_func(
+            output_folder, scene_seed, iter, action, json_name, description, inplace
+        )
         outpath = output_folder / "assets"
         outpath.mkdir(exist_ok=True)
         with open(outpath / "info.pickle", "wb") as f:
@@ -302,17 +304,19 @@ def execute_tasks(
         )
 
 
-def main(iter,
-        action,
-        description,
-        inplace,
-        json_name,
-        input_folder, 
-        output_folder, 
-        scene_seed, 
-        task, 
-        task_uniqname, 
-        **kwargs):
+def main(
+    iter,
+    action,
+    description,
+    inplace,
+    json_name,
+    input_folder,
+    output_folder,
+    scene_seed,
+    task,
+    task_uniqname,
+    **kwargs,
+):
     version_req = ["3.6.0"]
     assert bpy.app.version_string in version_req, (
         f"You are using blender={bpy.app.version_string} which is "

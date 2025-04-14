@@ -1,7 +1,7 @@
-
-from gpt import GPT4 
-from utils import extract_json, dict2str, lst2str
 import json
+
+from gpt import GPT4
+from utils import dict2str, extract_json, lst2str
 
 system_prompt = """
 You are an expert in 3D scene evaluation. 
@@ -22,8 +22,6 @@ For the image:
 - The y-coordinate usually increases from top to bottom (positive y is downward).
 
 """
-
-
 
 
 user_prompt = """
@@ -72,27 +70,35 @@ True:
 
 """
 
-def update_scene_gpt(user_demand,ideas,iter,roomtype):
 
+def update_scene_gpt(user_demand, ideas, iter, roomtype):
     render_path = f"/home/yandan/workspace/infinigen/record_scene/render_{iter-1}.jpg"
-    with open(f"/home/yandan/workspace/infinigen/record_scene/layout_{iter-1}.json", "r") as f:
+    with open(
+        f"/home/yandan/workspace/infinigen/record_scene/layout_{iter-1}.json", "r"
+    ) as f:
         layout = json.load(f)
-    
+
     roomsize = layout["roomsize"]
     roomsize = lst2str(roomsize)
 
     structure = dict2str(layout["structure"])
     layout = dict2str(layout["objects"])
-    
-    
+
     system_prompt_1 = system_prompt
-    user_prompt_1 = user_prompt.format(roomtype=roomtype,roomsize=roomsize,
-                                       layout=layout,structure=structure,
-                                       user_demand=user_demand,ideas=ideas) 
-        
+    user_prompt_1 = user_prompt.format(
+        roomtype=roomtype,
+        roomsize=roomsize,
+        layout=layout,
+        structure=structure,
+        user_demand=user_demand,
+        ideas=ideas,
+    )
+
     gpt = GPT4(version="4o")
 
-    prompt_payload = gpt.get_payload_scene_image(system_prompt_1, user_prompt_1,render_path=render_path)
+    prompt_payload = gpt.get_payload_scene_image(
+        system_prompt_1, user_prompt_1, render_path=render_path
+    )
     gpt_text_response = gpt(payload=prompt_payload, verbose=True)
     print(gpt_text_response)
 
@@ -101,16 +107,17 @@ def update_scene_gpt(user_demand,ideas,iter,roomtype):
         json.dump(gpt_text_response, f, indent=4)
 
     new_layout = extract_json(gpt_text_response)
-    
+
     json_name = f"/home/yandan/workspace/infinigen/Pipeline/record/update_gpt_results_{iter}.json"
     with open(json_name, "w") as f:
         json.dump(new_layout, f, indent=4)
 
     return json_name
-    
+
+
 if __name__ == "__main__":
     user_demand = "A Bedroom"
     ideas = "improve"
-    iter=10
-    roomtype=user_demand
-    update_scene_gpt(user_demand,ideas,iter,roomtype)
+    iter = 10
+    roomtype = user_demand
+    update_scene_gpt(user_demand, ideas, iter, roomtype)

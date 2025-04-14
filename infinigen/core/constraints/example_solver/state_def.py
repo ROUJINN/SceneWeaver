@@ -64,9 +64,9 @@ class ObjectState:
 
     def __post_init__(self):
         assert not t.contradiction(self.tags)
-        assert not any(
-            isinstance(r.relation, cl.NegatedRelation) for r in self.relations
-        ), self.relations
+        # assert not any(
+        #     isinstance(r.relation, cl.NegatedRelation) for r in self.relations
+        # ), self.relations  #TODO111
 
     def __repr__(self):
         obj = self.obj

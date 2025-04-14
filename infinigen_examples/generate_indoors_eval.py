@@ -92,122 +92,21 @@ def compose_indoors(
     inplace,
     **overrides,
 ):
-    height = 1
+    for iter in range(4,16):
+        height = 1
 
-    consgraph = home_constraints()
-    stages = basic_scene.default_greedy_stages()
-    checks.check_all(consgraph, stages, all_vars)
+        consgraph = home_constraints()
+        stages = basic_scene.default_greedy_stages()
+        checks.check_all(consgraph, stages, all_vars)
 
-    stages, consgraph, limits = restrict_solving(stages, consgraph)
+        stages, consgraph, limits = restrict_solving(stages, consgraph)
+        os.environ["JSON_RESULTS"] = json_name
 
-    # p = pipeline.RandomStageExecutor(scene_seed, output_folder, overrides)
-    os.environ["JSON_RESULTS"] = json_name
-    if iter == 0 and action != "add_relation":
-        p = pipeline.RandomStageExecutor(scene_seed, output_folder, overrides)
-        p, terrain = basic_scene.basic_scene(
-            scene_seed, output_folder, overrides, logger, p
-        )
-        os.environ["ROOM_INFO"] = "/home/yandan/workspace/infinigen/roominfo.json"
-        state, solver, override = room_structure.build_room_structure(
-            p, overrides, stages, logger, output_folder, scene_seed, consgraph
-        )
-
-        light.turn_off(p)
-
-        camera_rigs, solved_rooms, house_bbox, solved_bbox = camera.animate_camera(
-            state, stages, limits, solver, p
-        )
-
-        match action:
-            case "init_physcene":
-                state, solver = init_graph.init_physcene(
-                    stages, limits, solver, state, p
-                )
-
-            case "init_metascene":
-                state, solver = init_graph.init_metascene(
-                    stages, limits, solver, state, p
-                )
-            case "init_gpt":
-                solver.load_gpt_results()
-                state, solver = init_graph.init_gpt(stages, limits, solver, state, p)
-
-            case _:
-                raise ValueError(f"Action is wrong: {action}")
-    else:
-        if inplace:
-            load_iter = iter
-        else:
-            load_iter = iter - 1
-        p = pipeline.RandomStageExecutor(scene_seed, output_folder, overrides)
-        state, solver, terrain, house_bbox, solved_bbox, _ = record.load_scene(
+        load_iter = iter
+        state, solver, terrain, house_bbox, solved_bbox, p = record.load_scene(
             load_iter
         )
-        camera_rigs = [bpy.data.objects.get("CameraRigs/0")]
-        match action:
-            case "add_relation":
-                state, solver = update_graph.add_new_relation(solver, state, p)
-            case "solve_large":
-                state, solver = solve_objects.solve_large_object(
-                    stages, limits, solver, state, p, consgraph, overrides
-                )
-            case "solve_medium":
-                state, solver = solve_objects.solve_medium_object(
-                    stages, limits, solver, state, p, consgraph, overrides
-                )
-            case "solve_large_and_medium":
-                state, solver = solve_objects.solve_large_and_medium_object(
-                    stages, limits, solver, state, p, consgraph, overrides
-                )
-            case "solve_small":
-                state, solver = solve_objects.solve_small_object(
-                    stages, limits, solver, state, p, consgraph, overrides
-                )
-            case "add_gpt":
-                state, solver = update_graph.add_gpt(stages, limits, solver, state, p)
-            case "add_acdc":
-                state, solver = update_graph.add_acdc(solver, state, p, description)
-            case "add_rule":
-                state, solver = update_graph.add_rule(stages, limits, solver, state, p)
-            case "export_supporter":
-                record.export_supporter(
-                    state, obj_name=description, export_path="record_files/obj.blend"
-                )
-                sys.exit()
-            case "update":
-                state, solver = update_graph.update(solver, state, p)
-            case "modify":
-                state, solver = update_graph.modify(stages, limits, solver, p)
-            case "finalize_scene":
-                solved_rooms = [bpy.data.objects["newroom_0-0"]]
-                height = complete_structure.finalize_scene(
-                    overrides,
-                    stages,
-                    state,
-                    solver,
-                    output_folder,
-                    p,
-                    terrain,
-                    solved_rooms,
-                    house_bbox,
-                    camera_rigs,
-                )
-            case _:
-                raise ValueError(f"Action is wrong: {action}")
-
-    solver.del_no_relation_objects()
-
-    state, solver = solve_objects.solve_large_object(
-        stages, limits, solver, state, p, consgraph, overrides
-    )
-    
-    # state,solver = solve_objects.solve_medium_object(stages,limits,solver,state,p,consgraph,overrides)
-    # state,solver = solve_objects.solve_small_object(stages,limits,solver,state,p,consgraph,overrides)
-    record.record_scene(
-        state, solver, terrain, house_bbox, solved_bbox, camera_rigs, iter, p
-    )
-
-    evaluate.eval_metric(state,iter)
+        evaluate.eval_metric(state,iter)
 
     return {
         "height_offset": height,

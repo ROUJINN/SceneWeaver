@@ -213,17 +213,20 @@ class Addition(moves.Move):
         iu.translate(state.trimesh_scene, name, position)
         iu.rotate(state.trimesh_scene, name, np.array([0, 0, 1]), rotation)
 
-
-        success = dof.try_apply_relation_constraints(
-            state,
-            target_name,
-            expand_collision=expand_collision,
-            n_try_resolve=1,
-            use_initial=True,
-            closest_surface=False,  #TODO YYD
-        )  # check
-        logger.debug(f"{self} {success=}")
-        return success
+        if state.objs[target_name].relations is not None:
+            success = dof.try_apply_relation_constraints(
+                state,
+                target_name,
+                expand_collision=expand_collision,
+                n_try_resolve=1,
+                use_initial=True,
+                closest_surface=False,  #TODO YYD
+            )  # check
+            logger.debug(f"{self} {success=}")
+            return success
+        else:
+            print(f"No relation assigned for {target_name}")
+            return True
 
         # save_path = "debug.blend"
         # bpy.ops.wm.save_as_mainfile(filepath=save_path)

@@ -449,7 +449,7 @@ def any_touching(
         hit, names, contacts = col.in_collision_single(
             scene.geometry[g], transform=T, return_data=True, return_names=True
         )
-    elif isinstance(b, list):
+    elif isinstance(b, list) or isinstance(b, set):
         # 如果 b 是一个列表，处理多个物体之间的碰撞检测
         col2 = iu.col_from_subset(scene, b, b_tags, bvh_cache)
         hit, names, contacts = col.in_collision_other(

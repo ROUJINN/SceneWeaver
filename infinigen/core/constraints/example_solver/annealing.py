@@ -194,22 +194,26 @@ class SimulatedAnnealingSolver:
         filter_domain: r.Domain,
         expand_collision=False,
     ) -> typing.Tuple[Move, evaluator.EvalResult, int]:
-        move_gen = propose_func(consgraph, state, filter_domain, temp)
+        gen = propose_func(consgraph, state, filter_domain, temp)
 
         move = None
         retry = None
 
-        for retry, move in enumerate(move_gen):  # MARK # MARK：遍历移动生成器
+        for retry, move in enumerate(gen):  # MARK # MARK：遍历移动生成器
             if retry == self.max_invalid_candidates:  # 如果达到最大无效候选次数
                 logger.debug(
-                    f"{move_gen=} reached {self.max_invalid_candidates=} without succeeding an apply()"
+                    f"{gen=} reached {self.max_invalid_candidates=} without succeeding an apply()"
                 )
                 break  # 退出循环
 
             # succeeded = move.apply(state, expand_collision)
-            succeeded = move.apply_gradient(
-                state, temp, expand_collision
-            )  # 尝试应用移动到当前状态
+            try:
+                succeeded = move.apply_gradient(
+                    state, temp, expand_collision
+                )  # 尝试应用移动到当前状态
+                
+            except:
+                succeeded = move.apply(state, expand_collision)
 
             if succeeded:  # 如果成功应用
                 evaluator.evict_memo_for_move(consgraph, state, self.eval_memo, move)
@@ -221,7 +225,7 @@ class SimulatedAnnealingSolver:
             move.revert(state)  # 撤销移动
 
         else:  # 如果循环正常结束（没有找到有效移动）
-            logger.debug(f"{move_gen=} produced {retry} attempts and none were valid")
+            logger.debug(f"{gen=} produced {retry} attempts and none were valid")
 
         return move, None, retry  # 返回最后的移动、无效结果和尝试次数
 

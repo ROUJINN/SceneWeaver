@@ -31,7 +31,7 @@ def gen_SD_prompt(prompt,objtype,obj_size):
     
     user_prompt_1 = user_prompt.format(user_demand=prompt,objtype=objtype,objsize=obj_size) 
         
-    gpt = GPT4()
+    gpt = GPT4(version="4o")
 
     prompt_payload = gpt.get_payload(system_prompt, user_prompt_1)
     gpt_text_response = gpt(payload=prompt_payload, verbose=True)

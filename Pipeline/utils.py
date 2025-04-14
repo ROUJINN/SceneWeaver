@@ -180,8 +180,14 @@ def dict2str(d, indent=0):
             )
         elif isinstance(value, list):
             # Handle lists
+            # list_str = ", ".join(
+            #     dict2str(item, indent + 1) if isinstance(item, dict) else str(item)
+            #     for item in value
+            # )
             list_str = ", ".join(
-                dict2str(item, indent + 1) if isinstance(item, dict) else str(item)
+                dict2str(item, indent + 1) if isinstance(item, dict)
+                else f"{item:.2f}" if isinstance(item, float)
+                else str(item)
                 for item in value
             )
             result.append(f"{indent_str}{key}: [{list_str}]")
