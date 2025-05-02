@@ -225,9 +225,16 @@ def  stable_against(
             if obj_name=="60910_nightstand":
                 a = 1
             gradient = anti_project_to_3d(gradient,normal_b)
+            gradient = sa.dof_matrix_translation @ gradient
+            gradient_norm = np.linalg.norm(gradient)
+            if gradient_norm == 0:
+                translation = np.zeros(3)
+            else:
+                TRANS_MULT = 0.05 #min(0.05,gradient_norm)
+                translation = TRANS_MULT * gradient / gradient_norm
             # gradient = [gradient[0],gradient[1],0]
-            TRANS_MULT = 0.05
-            translation = TRANS_MULT * sa.dof_matrix_translation @ gradient
+            # TRANS_MULT = 0.05
+            # translation = TRANS_MULT * sa.dof_matrix_translation @ gradient
             iu.translate(state.trimesh_scene, sa.obj.name, translation)
             print(obj_name, bpy.data.objects[sa.obj.name].location)
  
@@ -245,8 +252,18 @@ def  stable_against(
             tangent_2 = tangent_2 / np.linalg.norm(tangent_2)
             gradient = vertical_diff * tangent_2
             
-            TRANS_MULT = 0.1
-            translation = TRANS_MULT * sa.dof_matrix_translation @ gradient
+            gradient = sa.dof_matrix_translation @ gradient
+            # gradient[2] = 0
+            gradient_norm = np.linalg.norm(gradient)
+            if gradient_norm == 0:
+                translation = np.zeros(3)
+            else:
+                TRANS_MULT = 0.05 # #min(0.05,gradient_norm)
+                translation = TRANS_MULT * gradient / gradient_norm
+
+            # TRANS_MULT = 0.1
+            # translation = TRANS_MULT * sa.dof_matrix_translation @ gradient
+            
             iu.translate(state.trimesh_scene, sa.obj.name, translation)
             
 

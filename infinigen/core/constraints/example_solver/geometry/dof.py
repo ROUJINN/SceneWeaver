@@ -429,6 +429,7 @@ def apply_relations_surfacesample(
         rev_normal1 = rev_normals[0]
         rev_normal2 = rev_normals[1]
         # 获取父对象的标记子网
+        
         parent1_trimesh = state.planes.get_tagged_submesh(
             state.trimesh_scene, parent_obj1.name, parent_tags1, parent_plane1
         )
@@ -655,6 +656,8 @@ def try_apply_relation_constraints(
             )
             or use_initial
         ):
+            if name == "6045861_SidetableDeskFactory":
+                a = 1
             obj_state.dof_matrix_translation = combined_stability_matrix(
                 parent_planes
             )  # 平移自由度的合成约束矩阵。

@@ -93,6 +93,7 @@ class SceneDesigner():
         return self.memory.messages
     
     def step(self) -> str:
+
         if self.current_step!=0:
             eval_results = self.eval(iter=self.current_step-1)
         """Execute a single step: think and act."""
@@ -389,8 +390,9 @@ class SceneDesigner():
 
         results: List[str] = []
 
-        self.current_step = 3
+        self.current_step = 1
         save_dir = os.getenv("save_dir")
+
         if self.current_step>0:
             with open(f"{save_dir}/pipeline/memory_{self.current_step-1}.pkl", "rb") as file:
                 self.memory = dill.load(file)

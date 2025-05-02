@@ -19,7 +19,7 @@ Based on user needs and current status:
 4. Find the most serious problem to solve.
 
 To solve the problem, list all the appropriate tools that can match the requirement for next step with 0-1 confidence score:
-1. You should consider the suggestion from previous conversation to score each tool. 
+1. You should consider the suggestion from previous conversation to score each tool. If there is no previous step, init the scene.
 2. If the same problem has not been solved by last step, you should consider degrade the score of the tool in the last step.  
 3. You should carefully check current scene, and you **MUST** obey the relation of each object.
 3. For complex tasks, you can break down the problem and use different tools step by step to solve it, but you only choose and execute the suitable tool for this step. 

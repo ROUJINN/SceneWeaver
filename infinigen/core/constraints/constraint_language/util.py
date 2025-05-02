@@ -203,12 +203,49 @@ def sample_random_point(polygon):
 
 
 
-def delete_obj(scene, a, delete_blender=True, delete_asset=False):
+def delete_obj(scene, a, delete_blender=True):
     if isinstance(a, str):
         a = [a]
     if delete_blender:
         obj_list = [bpy.data.objects[obj_name] for obj_name in a if obj_name in bpy.data.objects]
         butil.delete(obj_list)
+    for obj_name in a:
+        # bpy.data.objects.remove(bpy.data.objects[obj_name], do_unlink=True)
+        if scene:
+            scene.graph.transforms.remove_node(obj_name)
+            scene.delete_geometry(obj_name + "_mesh")
+
+
+def get_obj_children(obj):
+    if not obj:
+        print(f"Object '{obj.name}' not found.")
+        return
+
+    # 收集所有子对象（递归）
+    def get_all_children(o):
+        children = []
+        for child in o.children:
+            if child.type!="EMPTY":
+                a = 1
+            children.append(child)
+            children.extend(get_all_children(child))
+        return children
+
+    all_objs = get_all_children(obj)
+
+    all_objs.append(obj)  # 最后也删除自己
+
+    return all_objs
+    
+
+def delete_obj_with_children(scene, a, delete_blender=True, delete_asset=True):
+    if isinstance(a, str):
+        a = [a]
+    if delete_blender:
+        obj_list = [bpy.data.objects[obj_name] for obj_name in a if obj_name in bpy.data.objects]
+        for obj in obj_list:
+            obj_with_children = get_obj_children(obj)
+            butil.delete(obj_with_children)
     for obj_name in a:
         # bpy.data.objects.remove(bpy.data.objects[obj_name], do_unlink=True)
         if scene:
@@ -223,13 +260,14 @@ def delete_obj(scene, a, delete_blender=True, delete_asset=False):
         
         if delete_blender:
             obj_list = [bpy.data.objects[obj_name] for obj_name in asset_names]
-            butil.delete(obj_list)
+            for obj in obj_list:
+                obj_with_children = get_obj_children(obj)
+                butil.delete(obj_with_children)
         for obj_name in asset_names:
             # bpy.data.objects.remove(bpy.data.objects[obj_name], do_unlink=True)
             if scene:
                 scene.graph.transforms.remove_node(obj_name)
                 scene.delete_geometry(obj_name + "_mesh")
-
 
 def global_vertex_coordinates(obj, local_vertex) -> Vector:
     return obj.matrix_world @ local_vertex.co

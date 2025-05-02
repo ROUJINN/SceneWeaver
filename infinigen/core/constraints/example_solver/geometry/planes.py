@@ -251,7 +251,7 @@ class Planes:
         else:
             obj_plane = obj_all_planes[relation_state.child_plane_idx]
 
-        if closest_surface and obj_plane is not None and parent_plane is not None:
+        if closest_surface and obj_plane is not None and parent_plane is not None: # and len(parent_all_planes)<10000:
             parent_plane_idx, child_plane_idx = self.get_closest_surface(
                 state,
                 relation_state,
@@ -295,13 +295,18 @@ class Planes:
         # find closest parent plane
         min_d = 1000
         # state.planes.get_tagged_submesh_prefast(state.trimesh_scene, parent_obj.name, parent_tags, parent_all_planes)
-        print("Getting the closest surface of ",parent_obj.name)
+        print("Getting the closest surface of ",parent_obj.name, "planes number: ",len(parent_all_planes))
         for idx, parent_plane in tqdm(enumerate(parent_all_planes)):
             if parent_obj.name=="newroom_0-0":
                 parent_plane_trimesh = state.planes.get_tagged_submesh(
                     state.trimesh_scene, parent_obj.name, parent_tags, parent_plane
                 )
             else:
+                #if object has too many planes, obmit some of them
+                if len(parent_all_planes)>1000 and parent_obj.name.startswith("MetaCategoryFactory"):
+                    ratio = len(parent_all_planes)//1000+1
+                    if idx%ratio!=0:
+                        continue
                 parent_plane_trimesh = state.planes.get_tagged_submesh_fast(
                     state.trimesh_scene, parent_obj.name, parent_tags, parent_plane
                 )

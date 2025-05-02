@@ -56,6 +56,8 @@ Then tell me how to solve these problems.
 Fianlly, according to the problem and thoughts, you **MUST** modify objects' layout to **fix the problem as much as possible**.
 You can change the location, rotation, and size of the objects.
 To move one objects, you should check other related objects, which might also need to be replaced. 
+To change the location, you should check if the rotation need to be changed.
+You should objey the relation of each object. For example, if an object is against wall, the location should near the wall.
 For objects that remain unchanged, you must keep their original layout in the response rather than omit it. 
 For deleted objects, omit their layout in the response. **You can not add any new object.**
 Keep the objects inside the room. 

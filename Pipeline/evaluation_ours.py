@@ -42,12 +42,18 @@ def statistic_traj(iter):
             j = json.load(f)
             traj["iter"] = i
             traj["action"] = j["action"]
-            traj["ideas"] = j["ideas"]
+            try:
+                traj["ideas"] = j["ideas"]
+            except:
+                a = 1
         with open(f"{save_dir}/pipeline/metric_{i}.json","r") as f:
             j = json.load(f)
             traj["results"] = dict()
-            traj["results"]["Physics score (0-10, higher is better)"] = j["GPT score (0-10, higher is better)"]
-            traj["results"]["Object Difference"] = j["Object Difference"]
+            traj["results"]["GPT score (0-10, higher is better)"] = j["GPT score (0-10, higher is better)"]
+            try:
+                traj["results"]["Object Difference"] = j["Object Difference"]
+            except:
+                a = 1
 
         with open(
             f"{save_dir}/record_files/metric_{iter}.json", "r"
@@ -70,38 +76,40 @@ def statistic_traj(iter):
         
 
 def eval_scene(iter, user_demand):
-    grades, grading = eval_general_score(iter, user_demand)
-    obj_diff = diff_objects(iter)
+    # grades, grading = eval_general_score(iter, user_demand)
+    # obj_diff = diff_objects(iter)
 
-    save_dir = os.getenv("save_dir")
-    with open(
-        f"{save_dir}/record_files/metric_{iter}.json", "r"
-    ) as f:
-        results = json.load(f)
+    # save_dir = os.getenv("save_dir")
+    # with open(
+    #     f"{save_dir}/record_files/metric_{iter}.json", "r"
+    # ) as f:
+    #     results = json.load(f)
 
-    metric = dict()
-    metric["Object Difference"] = obj_diff
-    metric["GPT score (0-10, higher is better)"] = grading
-    # metric["Physics score"] = {
-    #     "object number (higher is better)": results["Nobj"],
-    #     "object not inside the room (lower is better)": results["OOB"],
-    #     "object has collision (lower is better)": results["BBL"],
-    #     # "object not inside the room (lower is better)": results["OOB Objects"],
-    #     # "object has collision (lower is better)": results["BBL objects"],
-    # }
+    # metric = dict()
+    # metric["Object Difference"] = obj_diff
+    # metric["GPT score (0-10, higher is better)"] = grading
+    # # metric["Physics score"] = {
+    # #     "object number (higher is better)": results["Nobj"],
+    # #     "object not inside the room (lower is better)": results["OOB"],
+    # #     "object has collision (lower is better)": results["BBL"],
+    # #     # "object not inside the room (lower is better)": results["OOB Objects"],
+    # #     # "object has collision (lower is better)": results["BBL objects"],
+    # # }
     
-    save_dir = os.getenv("save_dir")
-    json_name = f"{save_dir}/pipeline/metric_{iter}.json"
-    with open(json_name, "w") as f:
-        json.dump(metric, f, indent=4)
+    # save_dir = os.getenv("save_dir")
+    # json_name = f"{save_dir}/pipeline/metric_{iter}.json"
+    # with open(json_name, "w") as f:
+    #     json.dump(metric, f, indent=4)
 
     action_trajs = statistic_traj(iter)
 
-    return metric
+    return 
 
 
 def eval_general_score(iter, user_demand):
     save_dir = os.getenv("save_dir")
+    if not os.path.exists(f"{save_dir}/pipeline/"):
+        os.mkdir(f"{save_dir}/pipeline/")
     # basedir = "/mnt/fillipo/yandan/scenesage/record_scene/bedroom/record_scene"
     image_path_1 = f"{save_dir}/record_scene/render_{iter}_marked.jpg"
     with open(f"{save_dir}/record_scene/layout_{iter}.json", "r") as f:
@@ -163,7 +171,7 @@ Scoring must be strict. If any critical issue is found (such as missing key obje
     - **Note**: If the room has layout issues that affect use, it should not score above 5.
 
 4. **Completion**: How complete and finished the room feels.
-    - **Good (8-10)**: All necessary large and small items are present. Has rich details. Each supporter (e.g. table, desk, and shelf) has small objects on it. Has some decorations on the gruond. The room feels done.
+    - **Good (8-10)**: All necessary large and small items are present. Has rich details. Each supporter (e.g. table, desk, and shelf) has small objects on it. The room feels done.
     - **Bad (0-3)**: Room is sparse or empty, lacks decor or key elements.
     - **Note**: If more than 30% of the room is blank or lacks detail, score under 5.
 
@@ -239,8 +247,59 @@ You are working in a 3D scene environment with the following conventions:
 
 
 if __name__ == "__main__":
-    os.environ["save_dir"] = "/mnt/fillipo/yandan/scenesage/record_scene/manus/Design_me_a_gym/"
-    eval_scene(
-        1,
-        "Design me a gym.",
-    )
+    
+
+    for i in range(13):
+        save_dir = f"/mnt/fillipo/yandan/scenesage/record_scene/manus/Design_me_a_bedroom_{i}"
+        img_dir = f"{save_dir}/record_scene"
+        max_iter = 0
+        for file in os.listdir(img_dir):
+            if file.endswith(".jpg") and len(file.split("_"))==2:
+                iter = int(file.split("_")[1].split(".")[0])
+                max_iter = max(max_iter,iter)
+        os.environ["save_dir"] = save_dir
+        print(f"evaluating ours Design_me_a_bedroom_{i} in iter {max_iter}")
+        
+        eval_scene(
+            max_iter,
+            f"Design me a bedroom.",
+        )
+
+
+    score = {"gpt_real":[],
+             "gpt_function":[],
+             "gpt_layout":[],
+             "gpt_complet":[],
+             "NObj":[],
+             "BBO":[],
+             "BBL":[]}
+    
+    # for i in [10,12,14,15,16,17,19]:
+    for i in range(7,13):
+        save_dir = f"/mnt/fillipo/yandan/scenesage/record_scene/manus/Design_me_a_bedroom_{i}"
+        img_dir = f"{save_dir}/record_scene"
+        max_iter = 0
+        for file in os.listdir(img_dir):
+            if file.endswith(".jpg") and len(file.split("_"))==2:
+                iter = int(file.split("_")[1].split(".")[0])
+                max_iter = max(max_iter,iter)
+
+        with open(f"{save_dir}/pipeline/trajs_{max_iter}.json","r") as f: 
+            j = json.load(f)
+
+        gptscore = j[str(max_iter)]["results"]["GPT score (0-10, higher is better)"]
+        score["gpt_real"].append(gptscore["realism"]["grade"])
+        score["gpt_function"].append(gptscore["functionality"]["grade"])
+        score["gpt_layout"].append(gptscore["layout"]["grade"])
+        score["gpt_complet"].append(gptscore["completion"]["grade"])
+
+        physcore = j[str(max_iter)]["results"]["Physics score"]
+        score["NObj"].append(physcore["object number"])
+        score["BBO"].append(len(physcore["object not inside the room"]))
+        score["BBL"].append(len(physcore["object has collision"]))
+
+    score_mean = dict()
+    for key,value in score.items():
+        score_mean[key] = round(np.mean(value),3)
+
+    print(score_mean)

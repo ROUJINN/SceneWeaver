@@ -67,23 +67,24 @@ class InitMetaSceneExecute(BaseTool):
 
         action = self.name
         try:
-            # # find scene
-            json_name, roomsize = self.find_metascene(user_demand, ideas, roomtype)
-            roomsize = self.get_roomsize(user_demand, ideas, roomsize, roomtype)
-            success = get_scene_frontview(json_name)
-            with open("/home/yandan/workspace/infinigen/roominfo.json", "w") as f:
-                info = {
-                    "action": action,
-                    "ideas": ideas,
-                    "roomtype": roomtype,
-                    "roomsize": roomsize,
-                    "scene_id": json_name,
-                    "save_dir":os.getenv("save_dir")
-                }
-                json.dump(info, f, indent=4)
-                
-            success = update_infinigen(action, iter, json_name,ideas=ideas)
-            assert success
+            # # # find scene
+            # save_dir = os.getenv("save_dir")
+            # json_name, roomsize = self.find_metascene(user_demand, ideas, roomtype)
+            # roomsize = self.get_roomsize(user_demand, ideas, roomsize, roomtype)
+            # success = get_scene_frontview(json_name)
+            # with open("/home/yandan/workspace/infinigen/roominfo.json", "w") as f:
+            #     info = {
+            #         "action": action,
+            #         "ideas": ideas,
+            #         "roomtype": roomtype,
+            #         "roomsize": roomsize,
+            #         "scene_id": json_name,
+            #         "save_dir": save_dir
+            #     }
+            #     json.dump(info, f, indent=4)
+            # os.system(f"cp /home/yandan/workspace/infinigen/roominfo.json {save_dir}/roominfo.json")
+            # success = update_infinigen(action, iter, json_name,ideas=ideas)
+            # assert success
 
             #add relation
             action = "add_relation"
@@ -149,7 +150,7 @@ class InitMetaSceneExecute(BaseTool):
         scenes = j["scenes"]
 
         scene_id = find_scene_id()
-        # scene_id = "scene0051_00"
+        # scene_id = "scene0697_00"
         json_name = scene_id
 
         with open("/mnt/fillipo/yandan/metascene/export_stage2_sm/roomsize.json", "r") as f:

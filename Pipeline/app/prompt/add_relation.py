@@ -19,7 +19,7 @@ The optional relation is:
 5.back_to_back: child_obj's back faces to parent_obj's back, and stand very close. 
 6.ontop: child_obj is placed on the top of parent_obj.
 7.on: child_obj is placed on the top of or inside parent_obj.
-8.against_wall: child_obj's back faces to the wall of the room, and stand very close.
+8.against_wall: child_obj's back faces to the wall of the room, and stand very close or exactly on the wall.
 9.side_against_wall: child_obj's side(left, right , or front) faces to the wall of the room, and stand very close.
 9.on_floor: child_obj stand on the parent_obj, which is the floor of the room.
 
@@ -65,13 +65,13 @@ The relation is written as a list in the "parent" key, in the format of [parent_
 For example, ["newroom_0-0", "onfloor"] means the child_obj is on the floor of the room. Note "newroom_0-0" is not listed in the objetcs' layout.
 And ["2419840_bed","ontop"] means the child_obj is on the top of "2419840_bed".
 Some relations have already been added, and you need to implement the relations when the layout is similar to the relation but not recorded in "parent" explicitly.
-You can take regular usage habits into account. If the object is always placed against wall, you need to add this relation regardless of the layout to make the scene reasonable.
 If an object is "against_wall", then it can not have other relations with objects.
 
 Before returning the final results, you need to carefully confirm that each obvious relation has been added. 
 
 **Important: Proximity Rule Reminder**
-You must strictly enforce spatial proximity when assigning relations. If two objects's edges are far away (>1.0 meter) from each other, DO NOT assign any relation between them, regardless of their category or orientation.
+For against_wall, you should first look through each object to check if it should be against wall. You can take regular usage habits into account. If the object is usually placed against wall or on the wall, you **MUST** add against_wall relation regardless of the layout to make the scene reasonable.
+For other relations, you **must** strictly enforce spatial proximity when assigning relations. If two objects's edges are far away (>1.0 meter) from each other, DO NOT assign any relation between them, regardless of their category or orientation.
 Do NOT assume a relation exists just because it is typical (e.g., 8 chairs facing a table) unless the layout confirms they are physically close enough.
 You are not allowed to infer relations purely from “usual placement” — **use the layout only**.
 

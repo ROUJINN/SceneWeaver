@@ -8,7 +8,7 @@ from infinigen.core.constraints.constraint_language import util as iu
 # from infinigen.core import tags as t
 from infinigen.core.constraints.evaluator.node_impl.trimesh_geometry import any_touching
 import os
-from infinigen.core.constraints.constraint_language.util import delete_obj
+from infinigen.core.constraints.constraint_language.util import delete_obj_with_children
 
 def eval_metric(state, iter,remove_bad=False):
     results,map_names = eval_physics_score(state,remove_bad=remove_bad)
@@ -89,6 +89,8 @@ def eval_physics_score(state,remove_bad=False):
     b_trimesh = iu.meshes_from_names(scene, room_obj.name)[0]
     projected_b = trimesh.path.polygons.projected(b_trimesh, normal_b, origin_b)
     for name in collision_objs:
+        if "couch" in map_names[name]:
+            a = 1
         # target_obj = bpy.data.objects.get(name)
         a_trimesh = iu.meshes_from_names(scene, name)[0]
         # try:
@@ -153,7 +155,7 @@ def eval_physics_score(state,remove_bad=False):
                         obj2 = state.trimesh_scene.geometry[state.objs[collide_pair[1]].obj.name+"_mesh"]
                         vol = trimesh.boolean.boolean_manifold([obj1,obj2],"intersection").volume
                         # print(f"Intersection volume: {vol:.6f}")
-                        if vol > 0.00001:
+                        if vol > 0.0001:
                             print(collide_pair,vol)
                             collide_volume.append(vol)
                             collide_pairs.append(collide_pair)
@@ -370,7 +372,7 @@ def del_top_collide_obj(state,iter):
     print(f"### Object {max_key} has biggest collision volume: {record[max_key]}, remove it !")
 
     objname = state.objs[max_key].obj.name
-    delete_obj(state.trimesh_scene,objname,delete_blender=True, delete_asset=True)
+    delete_obj_with_children(state.trimesh_scene,objname,delete_blender=True, delete_asset=True)
     state.objs.pop(max_key)
 
     return max_key

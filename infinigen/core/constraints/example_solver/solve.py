@@ -508,7 +508,14 @@ class Solver:
                     position = value[num]["position"]
                     if len(value[num]["position"]) == 2:
                         position += [0]
-                    rotation = value[num]["rotation"] * math.pi / 180
+
+                    rotation = value[num]["rotation"]
+                    if isinstance(rotation,list):
+                        rotation = rotation[2]
+                    elif  isinstance(rotation,int):
+                        rotation = rotation * math.pi / 180
+                    else:
+                        AssertionError
                     size = value[num]["size"]
                     name = key.lower()
 
@@ -879,9 +886,10 @@ class Solver:
     def delete_object(self,name):
         if name in self.state.objs:
             objname = self.state.objs[name].obj.name
-            from infinigen.core.constraints.constraint_language.util import delete_obj
-            delete_obj(self.state.trimesh_scene,objname,delete_blender=True, delete_asset=True)
+            from infinigen.core.constraints.constraint_language.util import delete_obj_with_children
+            delete_obj_with_children(self.state.trimesh_scene,objname,delete_blender=True, delete_asset=True)
             self.state.objs.pop(name)
+            print(f"!!! Deleting object {name} and its children")
         return
 
     def remove_object(self):
@@ -1010,7 +1018,7 @@ class Solver:
                         a = 1
                     meshpath = None
 
-                    move.apply_init(
+                    success = move.apply_init(
                         self.state,
                         target_name,
                         size,
@@ -1019,6 +1027,9 @@ class Solver:
                         gen_class,
                         meshpath,
                     )
+                    if not success:
+                        self.delete_object(target_name)
+
 
                     Placement[key][num]["name"] = target_name
 
@@ -1079,6 +1090,8 @@ class Solver:
             Placement = json.load(f)
         for step in ["large", "small"]:
             for key, value in Placement.items():
+                if key=="5":
+                    a = 1
                 position = [0, 0, 0]
                 rotation = 0
                 size = None
@@ -1096,7 +1109,11 @@ class Solver:
                         on_floor = False
                         against_wall = False
                         parent_key = rel_small2big[name]
-                        parent_obj_name = Placement[parent_key]["target_name"]
+                        try:
+                            parent_obj_name = Placement[parent_key]["target_name"]
+                        except:
+                            #failed in loading parent
+                            continue
                         relation = "ontop"
                     else:
                         continue
@@ -1195,7 +1212,8 @@ class Solver:
                     gen_class,
                     asset_file,
                 )
-
+                if key=="5":
+                    a = 1
                 Placement[key]["target_name"] = target_name
 
                 # invisible_others()

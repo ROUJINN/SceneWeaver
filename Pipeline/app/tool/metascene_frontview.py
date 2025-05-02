@@ -174,4 +174,4 @@ def get_scene_frontview(scene_name,verbose=False):
 
 
 if __name__ == "__main__":
-    get_scene_frontview("scene0157_00")
+    get_scene_frontview("scene0641_00")

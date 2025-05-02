@@ -214,7 +214,7 @@ class TranslateMove(moves.Move):
         if len(b_names) == 0 or gradient_norm == 0:
             translation = np.zeros(3)
         else:
-            TRANS_MULT = 0.05
+            TRANS_MULT = min(0.05,gradient_norm)
             translation = TRANS_MULT * gradient / gradient_norm
         print(translation)
         

@@ -66,6 +66,7 @@ class InitPhySceneExecute(BaseTool):
         action = self.name
         try:
             # #find scene
+            save_dir = os.getenv("save_dir")
             json_name, roomsize = self.find_physcene(user_demand, ideas, roomtype)
             roomsize = get_roomsize(user_demand, ideas, roomsize, roomtype)
             
@@ -76,10 +77,10 @@ class InitPhySceneExecute(BaseTool):
                     "roomtype": roomtype,
                     "roomsize": roomsize,
                     "scene_id": json_name,
-                    "save_dir":os.getenv("save_dir")
+                    "save_dir": save_dir
                 }
                 json.dump(info, f, indent=4)
-                
+            os.system(f"cp /home/yandan/workspace/infinigen/roominfo.json {save_dir}/roominfo.json")
             success = update_infinigen(action, iter, json_name, ideas=ideas)
             assert success
 

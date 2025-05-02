@@ -9,7 +9,7 @@ from .basic_scene import all_vars
 
 def solve_large_object(stages,limits,solver,state,p,consgraph,overrides):
 
-# region solve large
+    # region solve large
     def solve_large():
         assignments = greedy.iterate_assignments(
             stages["on_floor"], state, all_vars, limits, nonempty=True

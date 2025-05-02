@@ -10,6 +10,9 @@ import sys, os, shutil
 import objaverse
 from torch.nn import functional as F
 import re
+import subprocess
+
+
 #Print device
 print("Device: ", torch.cuda.get_device_name(0))
 
@@ -117,12 +120,32 @@ if __name__ == "__main__":
             retrieved_obj = retrieved_objs[i]
             print("Retrieved object: ", retrieved_obj["u"])
             processes = multiprocessing.cpu_count()
+            
             objaverse_objects = objaverse.load_objects(
                 uids=[retrieved_obj['u']],
                 download_processes=processes
             )
             file_path = list(objaverse_objects.values())[0]
             LoadObjavFiles[category].append(file_path)
+            
+            #render
+            cmd = f"""
+            source ~/anaconda3/etc/profile.d/conda.sh
+            conda activate infinigen_python
+            python /home/yandan/workspace/infinigen/infinigen/assets/objaverse_assets/blender_render.py {file_path} > run1.log 2>&1
+            """
+            subprocess.run(["bash", "-c", cmd])
+
+            #front view
+            render_folder = file_path.replace(".glb","")
+            cmd = f"""
+            source ~/anaconda3/etc/profile.d/conda.sh
+            conda activate layoutgpt
+            python /home/yandan/workspace/infinigen/Pipeline/app/tool/objaverse_frontview.py {render_folder} {category} > run1.log 2>&1
+            """
+            subprocess.run(["bash", "-c", cmd])
+
+            
     
     with open(f"/home/yandan/workspace/infinigen/objav_files.json","w") as f:
         json.dump(LoadObjavFiles,f,indent=4)

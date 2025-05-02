@@ -28,14 +28,14 @@ Expected Output is in json format:
 {
     "2049208_TableFactory":
         {
-            "prompt for SD": "An entire 80cm * 60cm * 50cm simple table fully visible on the ground, with tissue and flower on it. Taken in 45 degree top-down view. The entire table, including the bottom, should be visible in the frame. The background is clean with nothing else nearby.",
+            "prompt for SD": "An entire 80cm * 60cm * 50cm simple table fully visible on the ground, with tissue and flower on it. The entire table, including the bottom, should be visible in the frame. The background is clean with nothing else nearby.",
             "obj category": "table",
             "obj_id": "2049208_TableFactory",
             "obj_size": [0.8,0.6,0.5]
         },
     "2360448_SimpleDeskFactory":
         {
-            "prompt for SD": "An entire 120cm * 50cm * 80cm simple desk fully visible on the ground, with a laptop, a keyboard, and a mouse on top of it. Taken in 45 degree top-down view. The entire desk, including the bottom, should be visible in the frame. The background is clean with nothing else nearby.",
+            "prompt for SD": "An entire 120cm * 50cm * 80cm simple desk fully visible on the ground, with a laptop, a keyboard, and a mouse on top of it. The entire desk, including the bottom, should be visible in the frame. The background is clean with nothing else nearby.",
             "obj category": "desk",
             "obj_id": "2360448_SimpleDeskFactory",
             "obj_size": [1.2,0.5,0.8]

@@ -242,16 +242,17 @@ You are working in a 3D scene environment with the following conventions:
 
 if __name__ == "__main__":
     
-    
-    # for i in [12,14,15,16,17,19]:
-    #     save_dir = f"/mnt/fillipo/yandan/scenesage/record_scene/idesign/scene_{i}"
-    #     os.environ["save_dir"] = save_dir
-    #     print(f"evaluating idesign scene_{i}")
+    method = "layoutgpt"
+    roomtype = "livingroom"
+    for i in range(10):
+        save_dir = f"/mnt/fillipo/yandan/scenesage/record_scene/{method}/livingroom_{i}"
+        os.environ["save_dir"] = save_dir
+        print(f"evaluating {method} scene_{i}")
         
-    #     metric = eval_scene(
-    #         0,
-    #         "Design me a livingroom.",
-    #     )
+        metric = eval_scene(
+            0,
+            f"Design me a {roomtype}.",
+        )
 
 
     score = {"gpt_real":[],
@@ -262,8 +263,9 @@ if __name__ == "__main__":
              "BBO":[],
              "BBL":[]}
     
-    for i in [10,12,14,15,16,17,19]:
-        save_dir = f"/mnt/fillipo/yandan/scenesage/record_scene/idesign/scene_{i}"
+    # for i in [10,12,14,15,16,17,19]:
+    for i in range(10):
+        save_dir = f"/mnt/fillipo/yandan/scenesage/record_scene/{method}/livingroom_{i}"
         with open(f"{save_dir}/pipeline/trajs_0.json","r") as f: 
             j = json.load(f)
 

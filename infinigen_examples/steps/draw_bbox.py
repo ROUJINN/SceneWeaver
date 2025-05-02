@@ -112,9 +112,9 @@ def add_front_arrow_to_bbox(bbox_obj, length=0.5, color=(1, 0.5, 0, 1)):
     direction.normalize()
 
     shaft_length = bbox_obj.dimensions[0]*0.75
-    shaft_radius = bbox_obj.dimensions[0]*0.03
-    head_length = bbox_obj.dimensions[0]*0.2
-    head_radius = bbox_obj.dimensions[0]*0.1
+    shaft_radius = 0.02 #bbox_obj.dimensions[0]*0.03
+    head_length = 0.1 # bbox_obj.dimensions[0]*0.2
+    head_radius = 0.1 #bbox_obj.dimensions[0]*0.1
 
     # Call arrow creation utility (assumes get_arrow or create_arrow is defined)
     create_arrow(start=start, 

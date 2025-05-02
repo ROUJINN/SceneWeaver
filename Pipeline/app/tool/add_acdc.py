@@ -20,9 +20,12 @@ Using image generation and 3D reconstruction to add additional objects into the 
 
 Use Case 1: Add **a group of** small objects on the top of an empty and large furniture, such as a table, cabinet, and desk when there is nothing on its top. 
 
-Do not add objects where there is no available space or there already exists small objects.
-You **MUST** not add small objects on the tall furniture, such as wardrob.
-Do not add small objects on small supporting surface, such as nightstand.
+You **MUST** not:
+1.Do not add objects where there is no available space.
+2.Do not add objects where there already exists other small objects.
+3.Do not add small objects on any tall furniture, such as wardrob.
+4.Do not add small objects on small supporting surface, such as nightstand.
+5.Do not add small objects on concave furniture, such as sofa and shelf.
 
 Strengths: Real. Excellent for adding a group of objects with inter-relations on the top of a large furniture.(e.g., enriching a tabletop), such as adding (laptop,mouse,keyboard) set on the desk and (plate,spoon,food) set on the dining table. Accurate in rotation. 
 Weaknesses: Can not add objects on the wall, ground, or ceiling. Can not add objectsinside a container, such as objects in the shelf. Can not add objects when there is already something on the top.

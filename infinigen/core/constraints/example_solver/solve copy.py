@@ -820,6 +820,7 @@ class Solver:
                 if rel.target_name not in self.state.objs.keys():
                     relations.remove(rel)
             if relations == [] and self.state.objs[name].generator is not None:
+                print(f"Removing no relation object {name}.")
                 self.state.objs.pop(name)
         return
 

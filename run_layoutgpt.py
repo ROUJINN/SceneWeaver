@@ -9,7 +9,7 @@ args_path = "args_layoutgpt.json"
 roominfo_path = "roominfo_layoutgpt.json"
 
 roomtype="livingroom"
-for i in range(9,10):
+for i in range(1,2):
 # for i in [11,13,18]:
     print(f"\n=== Running Task {i} ===")
 

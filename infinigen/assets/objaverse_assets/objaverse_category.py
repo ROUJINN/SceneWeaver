@@ -6,6 +6,7 @@
 
 import os
 import random
+import math
 
 import bpy
 import json
@@ -52,6 +53,11 @@ class ObjaverseCategoryFactory(ObjaverseFactory):
                 with open(f"/home/yandan/workspace/infinigen/objav_files.json","r") as f:
                     LoadObjavFiles = json.load(f)  
                 filename = LoadObjavFiles[self.category][0]
+                with open(filename.replace(".glb","")+"/metadata.json","r") as f:
+                    value = json.load(f)["front_view"]
+                    front_view_angle = value.split("/")[-1].split(".")[0].split("_")[-1]
+                    angle_bias = value.split("/")[-1].split(".")[0].split("_")[1]
+                    front_view_angle = int(front_view_angle)+int(angle_bias)
             bpy.ops.import_scene.gltf(filepath=filename)
             
             #preprocess directary
@@ -75,6 +81,10 @@ class ObjaverseCategoryFactory(ObjaverseFactory):
                 bpy.ops.object.select_all(action='DESELECT')
                 joined_object.select_set(True)
                 bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+                joined_object.rotation_mode = 'XYZ'
+                radians = math.radians(front_view_angle + 90)
+                joined_object.rotation_euler[2] = radians  # Rotate around Z-a to face front
+                bpy.ops.object.transform_apply(location=False, rotation=True, scale=False)
                 bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='BOUNDS')
                     
             bpy.ops.object.select_all(action='DESELECT')
@@ -88,7 +98,8 @@ class ObjaverseCategoryFactory(ObjaverseFactory):
         bpy.ops.object.select_all(action='DESELECT')
         imported_obj.select_set(True)
         bpy.ops.object.transform_apply(location=True, rotation=True, scale=False)
-        imported_obj.rotation_mode = 'XYZ'
+        
+
  
         # update scale
         if self.x_dim is not None and self.y_dim is not None and self.z_dim is not None:

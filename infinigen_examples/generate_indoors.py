@@ -76,7 +76,7 @@ from infinigen_examples.util.generate_indoors_util import (
 )
 from infinigen_examples.util.visible import invisible_others, visible_others,invisible_wall
 from infinigen.core.constraints.example_solver.geometry.validity import all_relations_valid
-from infinigen.core.constraints.constraint_language.util import delete_obj
+from infinigen.core.constraints.constraint_language.util import delete_obj_with_children
 
 logger = logging.getLogger(__name__)
 
@@ -129,7 +129,7 @@ def compose_indoors(
             state, stages, limits, solver, p
         )
         view_all()
-
+        state.__post_init__()
         if action== "init_physcene":
             state, solver = init_graph.init_physcene(
                 stages, limits, solver, state, p
@@ -158,6 +158,7 @@ def compose_indoors(
             os.system(f"cp {save_dir}/record_files/solver_{iter}.pkl {save_dir}/record_files/solver_{iter}_inplaced.pkl")
             os.system(f"cp {save_dir}/record_files/state_{iter}.pkl {save_dir}/record_files/state_{iter}_inplaced.pkl")
             os.system(f"cp {save_dir}/record_files/terrain_{iter}.pkl {save_dir}/record_files/terrain_{iter}_inplaced.pkl")
+            os.system(f"cp {save_dir}/pipeline/metric_{iter}.json {save_dir}/pipeline/metric_{iter}_inplaced.json")
         else:
             load_iter = iter - 1
         p = pipeline.RandomStageExecutor(scene_seed, output_folder, overrides)
@@ -228,31 +229,55 @@ def compose_indoors(
     # save_pah = "debug2.blend"
     # bpy.ops.twm.save_as_mainfile(filepath=save_path)
 
+    # state, solver = solve_objects.solve_large_object(
+    #             stages, limits, solver, state, p, consgraph, overrides
+    #         )
     if action not in ["init_physcene","init_metascene"]:
-        max_key = "start"
-        p.run_stage(
-            "populate_assets",
-            populate.populate_state_placeholders_mid,
-            state,
-            use_chance=False,
-        )
-        while(max_key is not None):
+        if action=="add_relation":
             state, solver = solve_objects.solve_large_object(
-                stages, limits, solver, state, p, consgraph, overrides
+                        stages, limits, solver, state, p, consgraph, overrides
+                    )
+        else:
+    
+            max_key = "start"
+            
+            p.run_stage(
+                "populate_assets",
+                populate.populate_state_placeholders_mid,
+                state,
+                use_chance=False,
             )
-            # for name in list(state.objs.keys())[::-1]:
-            #     if name in state.objs.keys():
-            #         if name != "newroom_0-0":
-            #             if not all_relations_valid(state, name, use_initial=True):
-            #                 print("all_relations_valid not valid ", name)
-            #                 objname = state.objs[name].obj.name
-            #                 delete_obj(state.trimesh_scene,objname,delete_blender=True, delete_asset=True)
-            #                 state.objs.pop(name)
+            while(max_key is not None):
+                state, solver = solve_objects.solve_large_object(
+                    stages, limits, solver, state, p, consgraph, overrides
+                )
 
-            solver.del_no_relation_objects()
+                solver.del_no_relation_objects()
 
-            max_key = evaluate.del_top_collide_obj(state,iter)
-            solver.del_no_relation_objects()
+                max_key = evaluate.del_top_collide_obj(state,iter)
+                solver.del_no_relation_objects()
+                if not bpy.app.background:
+                    invisible_others()
+                    bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
+                    visible_others()
+
+            for name in list(state.objs.keys())[::-1]:
+                if name in state.objs.keys():
+                    if name != "newroom_0-0":
+                        if "couch" in name:
+                            a = 1
+                        if not all_relations_valid(state, name, use_initial=True):
+                            if check_support(state,name,ratio=0.6): 
+                                #continue if children object is supported > 60%
+                                continue
+                            print("all_relations_valid not valid ", name)
+                            objname = state.objs[name].obj.name
+                            delete_obj_with_children(state.trimesh_scene,objname,delete_blender=True, delete_asset=True)
+                            state.objs.pop(name)
+                if not bpy.app.background:
+                    invisible_others()
+                    bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
+                    visible_others()
 
     # state,solver = solve_objects.solve_medium_object(stages,limits,solver,state,p,consgraph,overrides)
     # state,solver = solve_objects.solve_small_object(stages,limits,solver,state,p,consgraph,overrides)
@@ -271,6 +296,45 @@ def compose_indoors(
         "whole_bbox": house_bbox,
     }
 
+def check_support(state,child_name,ratio=0.6):
+    from infinigen_examples.steps.tools import export_relation
+    from infinigen.core.constraints.constraint_language import util as iu
+    import trimesh
+    
+    parent_relations = [
+        [rel.target_name, export_relation(rel.relation)]
+        for rel in state.objs[child_name].relations
+    ]
+    parent_names = []
+    for rel in parent_relations:
+        if rel[0] == "newroom_0-0":
+            return False
+        if rel[1] not in ["on","ontop"]:
+            return False
+        parent_names.append(rel[0])
+    if len(parent_names)==0:
+        return False
+    if len(parent_names)>1:
+        return False
+    
+    scene = state.trimesh_scene
+    sa = state.objs[child_name]
+    sb = state.objs[parent_names[0]]
+
+    a_trimesh = iu.meshes_from_names(scene, sa.obj.name)[0]
+    b_trimesh = iu.meshes_from_names(scene, sb.obj.name)[0]
+
+    normal_b = [0,0,1]
+    origin_b = [0,0,0]
+    projected_a = trimesh.path.polygons.projected(a_trimesh, normal_b, origin_b)
+    projected_b = trimesh.path.polygons.projected(b_trimesh, normal_b, origin_b)
+
+    intersection = projected_a.intersection(projected_b)
+    if intersection.area / projected_a.area  > ratio:
+        return True
+    else:
+        return False
+    
 def record_success():
     with open("args.json", "r") as f:
         j = json.load(f)
@@ -389,7 +453,7 @@ if __name__ == "__main__":
         os.system(f"mkdir {save_dir}/record_files")
         os.system(f"mkdir {save_dir}/record_scene")
     if args.inplace:
-        os.system(f"cp {save_dir}/args/args_{iter}.json {save_dir}/args/args_{iter}_inplaced.json")
+        os.system(f"cp {save_dir}/args/args_{args.iter}.json {save_dir}/args/args_{args.iter}_inplaced.json")
     os.system(f"cp args.json {save_dir}/args/args_{args.iter}.json")
   
     main(args)

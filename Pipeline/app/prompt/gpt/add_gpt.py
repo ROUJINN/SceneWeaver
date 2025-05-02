@@ -46,8 +46,8 @@ The optional relation is :
 3.leftright_leftright: obj1's left or right faces to obj2's left or right, and stand very close (less than 5 cm). Such as side_table and sofa.
 4.side_by_side: obj1's side(left, right , or front) faces to obj2's side(left, right , or front), and stand very close (less than 5 cm).
 5.back_to_back: obj1's back faces to obj2's back, and stand very close (less than 5 cm).
-6.ontop: obj1 is placed on the top of obj2. Such as book and nightstand.
-7.on: obj1 is placed inside obj2. Such as book and shelf. **Note**: The obj2 in this relationship must be previously existed object. You can not place a new object inside another new object.
+6.ontop: obj1 is placed on the top of obj2. Such as book and nightstand, vase and table.
+7.on (in): obj1 is placed **inside** obj2. Such as book and shelf. **Note**: The obj2 in this relationship must be previously existed object. You can not place a new object inside another new object.
 
 Failure case of relation:
 1.[table, table, side_by_side]: The relation between the same category is wrong. You only focus on relation between 2 different categories.
@@ -65,9 +65,9 @@ Here is the example:
     "category_against_wall": [],
     "Relation": [["book", "nightstand", "on"], ["book", "bench", "ontop"], ["bench", "bed", "front_to_front"]],
     "Placement": {
-        "bench": {"1": {"position": [2.25,1.5], "rotation": 180, "size": [0.5,2,0.5], "parent":["3124134_bed","front_to_front"]}},
-        "book": {"1": {"position": [0.2,0.1, 0.4], "size": [0.15,0.2,0.04], "rotation": 90, "parent":["2343214_nightstand", "on"]}, 
-                "2": {"position": [0.2,2.7,0.2], "size": [0.12,0.18,0.03], "rotation": 0, "parent":["bench","1","ontop"]}},
+        "bench": {"1": {"position": [2.25,1.5], "rotation": [0,0,3.14], "size": [0.5,2,0.5], "parent":["3124134_bed","front_to_front"]}},
+        "book": {"1": {"position": [0.2,0.1, 0.4], "rotation": [0,0,1.57], "size": [0.15,0.2,0.04], "parent":["2343214_nightstand", "ontop"]}, 
+                "2": {"position": [0.2,2.7,0.2], "rotation": [0,0,0], "size": [0.12,0.18,0.03], "parent":["bench","1","ontop"]}},
     }
 }
 
@@ -87,6 +87,8 @@ Here is the information you receive:
 {structure}
 7.Rendered Image from the top view: SCENE_IMAGE.
 
+**Note**:
+"on" here means inside. "ontop" means on the supporter. Do not use "on" to represent the supporting relationship.
 Here is your response, return a json format like the given example:
 """
 
