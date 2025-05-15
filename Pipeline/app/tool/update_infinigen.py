@@ -22,18 +22,18 @@ def update_infinigen(
         "success": False,
         "ideas": ideas,
     }
-
-    argsfile = f"/home/yandan/workspace/infinigen/args.json"
+    save_dir = os.getenv("save_dir")
+    argsfile = f"{save_dir}/args.json"
     with open(argsfile, "w") as f:
         json.dump(j, f, indent=4)
-
+    os.system(f"cp {save_dir}/roominfo.json /home/yandan/workspace/infinigen/roominfo.json")
     # if invisible:
     if True:
-        cmd = """
+        cmd = f"""
         source ~/anaconda3/etc/profile.d/conda.sh
         conda activate infinigen_python
         cd /home/yandan/workspace/infinigen
-        python -m infinigen_examples.generate_indoors --seed 0 --task coarse --output_folder outputs/indoors/coarse_expand_whole_nobedframe -g fast_solve.gin overhead.gin studio.gin -p compose_indoors.terrain_enabled=False compose_indoors.invisible_room_ceilings_enabled=True > /home/yandan/workspace/infinigen/Pipeline/run.log 2>&1
+        python -m infinigen_examples.generate_indoors --seed 0 --save_dir {save_dir} --task coarse --output_folder outputs/indoors/coarse_expand_whole_nobedframe -g fast_solve.gin overhead.gin studio.gin -p compose_indoors.terrain_enabled=False compose_indoors.invisible_room_ceilings_enabled=True > /home/yandan/workspace/infinigen/Pipeline/run.log 2>&1
         """
         subprocess.run(["bash", "-c", cmd])
     else:

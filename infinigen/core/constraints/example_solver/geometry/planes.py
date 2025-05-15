@@ -334,9 +334,9 @@ class Planes:
                 )
             else:
                 # if object has too many planes, obmit some of them
-                if len(parent_all_planes) > 1000 and parent_obj.name.startswith(
-                    "MetaCategoryFactory"
-                ):
+                if len(parent_all_planes) > 1000 and \
+                    (parent_obj.name.startswith("MetaCategoryFactory") \
+                     or parent_obj.name.startswith("ObjaverseCategoryFactory")):
                     ratio = len(parent_all_planes) // 1000 + 1
                     if idx % ratio != 0:
                         continue

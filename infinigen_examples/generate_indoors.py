@@ -126,7 +126,7 @@ def compose_indoors(
         p, terrain = basic_scene.basic_scene(
             scene_seed, output_folder, overrides, logger, p
         )
-        os.environ["ROOM_INFO"] = "/home/yandan/workspace/infinigen/roominfo.json"
+        os.environ["ROOM_INFO"] = f"{save_dir}/roominfo.json"
         state, solver, override = room_structure.build_room_structure(
             p, overrides, stages, logger, output_folder, scene_seed, consgraph
         )
@@ -257,93 +257,92 @@ def compose_indoors(
         else:
             raise ValueError(f"Action is wrong: {action}")
 
-    # state, solver = solve_objects.solve_large_object(
-    #     stages, limits, solver, state, p, consgraph, overrides
-    # )
-    # save_path = "debug2.blend"
-    # bpy.ops.twm.save_as_mainfile(filepath=save_path)
-
-    # state, solver = solve_objects.solve_large_object(
-    #             stages, limits, solver, state, p, consgraph, overrides
-    #         )
-
-            
-    if action not in ["init_physcene", "init_metascene", "finalize_scene", "add_acdc"]:
-        p.run_stage(
-            "populate_assets",
-            populate.populate_state_placeholders_mid,
-            state,
-            use_chance=False,
-        )
-        
-        if action == "add_relation":
-            state, solver = solve_objects.solve_large_object(
-                stages, limits, solver, state, p, consgraph, overrides
+    if "nophy" not in save_dir:
+                
+        if action not in ["init_physcene", "init_metascene", "finalize_scene", "add_acdc"]:
+            p.run_stage(
+                "populate_assets",
+                populate.populate_state_placeholders_mid,
+                state,
+                use_chance=False,
             )
-        else:
-            stop = False
-            while not stop:
+            
+            if action == "add_relation":
                 state, solver = solve_objects.solve_large_object(
                     stages, limits, solver, state, p, consgraph, overrides
                 )
-                for k, objinfo in state.objs.items():
-                    if hasattr(objinfo, "populate_obj"):
-                        asset_obj = bpy.data.objects.get(objinfo.populate_obj)
-                        place_obj = objinfo.obj
-                        if not np.allclose(asset_obj.location, place_obj.location):
-                            a = 1
-                        asset_obj.rotation_mode = "XYZ"
-                        place_obj.rotation_mode = "XYZ"
-                        if not np.allclose(
-                            asset_obj.rotation_euler, place_obj.rotation_euler
-                        ):
-                            a = 1
-                p.run_stage(
-                    "populate_assets",
-                    populate.populate_state_placeholders_mid,
-                    state,
-                    update_trimesh=False,
-                    use_chance=False,
-                )
-           
+            else:
+                stop = False
+                while not stop:
+                    state, solver = solve_objects.solve_large_object(
+                        stages, limits, solver, state, p, consgraph, overrides
+                    )
+                    for k, objinfo in state.objs.items():
+                        if hasattr(objinfo, "populate_obj"):
+                            asset_obj = bpy.data.objects.get(objinfo.populate_obj)
+                            place_obj = objinfo.obj
+                            if not np.allclose(asset_obj.location, place_obj.location):
+                                a = 1
+                            asset_obj.rotation_mode = "XYZ"
+                            place_obj.rotation_mode = "XYZ"
+                            if not np.allclose(
+                                asset_obj.rotation_euler, place_obj.rotation_euler
+                            ):
+                                a = 1
+                    p.run_stage(
+                        "populate_assets",
+                        populate.populate_state_placeholders_mid,
+                        state,
+                        update_trimesh=False,
+                        use_chance=False,
+                    )
+            
+                    solver.del_no_relation_objects()
+                    # save_path = "debug3.blend"
+                    # bpy.ops.twm.save_as_mainfile(filepath=save_path)
+                    stop = evaluate.del_top_collide_obj(state, iter)
+
+                    solver.del_no_relation_objects()
+
+                    if not bpy.app.background:
+                        invisible_others()
+                        bpy.ops.wm.redraw_timer(type="DRAW_WIN_SWAP", iterations=1)
+                        visible_others()
+            
+                for name in list(state.objs.keys())[::-1]:
+                    if name in state.objs.keys():
+                        if name != "newroom_0-0":
+                            if not all_relations_valid(
+                                state, name, use_initial=True, fix_pos=True
+                            ):
+                                if check_support(state, name, ratio=0.6):
+                                    # continue if children object is supported > 60%
+                                    continue
+                                print("all_relations_valid not valid ", name)
+                                objname = state.objs[name].obj.name
+                                delete_obj_with_children(
+                                    state.trimesh_scene,
+                                    objname,
+                                    delete_blender=True,
+                                    delete_asset=True,
+                                )
+                                state.objs.pop(name)
+                    if not bpy.app.background:
+                        invisible_others()
+                        bpy.ops.wm.redraw_timer(type="DRAW_WIN_SWAP", iterations=1)
+                        visible_others()
                 solver.del_no_relation_objects()
-                # save_path = "debug3.blend"
-                # bpy.ops.twm.save_as_mainfile(filepath=save_path)
-                stop = evaluate.del_top_collide_obj(state, iter)
 
-                solver.del_no_relation_objects()
 
-                if not bpy.app.background:
-                    invisible_others()
-                    bpy.ops.wm.redraw_timer(type="DRAW_WIN_SWAP", iterations=1)
-                    visible_others()
-           
-            for name in list(state.objs.keys())[::-1]:
-                if name in state.objs.keys():
-                    if name != "newroom_0-0":
-                        if not all_relations_valid(
-                            state, name, use_initial=True, fix_pos=True
-                        ):
-                            if check_support(state, name, ratio=0.6):
-                                # continue if children object is supported > 60%
-                                continue
-                            print("all_relations_valid not valid ", name)
-                            objname = state.objs[name].obj.name
-                            delete_obj_with_children(
-                                state.trimesh_scene,
-                                objname,
-                                delete_blender=True,
-                                delete_asset=True,
-                            )
-                            state.objs.pop(name)
-                if not bpy.app.background:
-                    invisible_others()
-                    bpy.ops.wm.redraw_timer(type="DRAW_WIN_SWAP", iterations=1)
-                    visible_others()
-            solver.del_no_relation_objects()
 
-    # state,solver = solve_objects.solve_medium_object(stages,limits,solver,state,p,consgraph,overrides)
-    # state,solver = solve_objects.solve_small_object(stages,limits,solver,state,p,consgraph,overrides)
+
+
+
+
+
+
+        # state,solver = solve_objects.solve_medium_object(stages,limits,solver,state,p,consgraph,overrides)
+        # state,solver = solve_objects.solve_small_object(stages,limits,solver,state,p,consgraph,overrides)
     record.record_scene(
         state, solver, terrain, house_bbox, solved_bbox, camera_rigs, iter, p
     )
@@ -422,10 +421,11 @@ def has_relation_with_obj(state, child_name):
 
 
 def record_success():
-    with open("args.json", "r") as f:
+    save_dir = os.getenv("save_dir")
+    with open(f"{save_dir}/args.json", "r") as f:
         j = json.load(f)
 
-    with open("args.json", "w") as f:
+    with open(f"{save_dir}/args.json", "w") as f:
         j["success"] = True
         json.dump(j, f, indent=4)
     return
@@ -463,6 +463,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--iter", type=int, default=0)
     parser.add_argument("--action", type=str, default="init_physcene")
+    parser.add_argument("--save_dir", type=str, default="debug/")
     parser.add_argument("--json_name", type=str, default="")
     parser.add_argument("--description", type=str, default="")
     parser.add_argument("--inplace", type=str, default="")
@@ -522,18 +523,21 @@ if __name__ == "__main__":
 
     import json
 
-    with open("args.json", "r") as f:
+    
+
+    # with open("/home/yandan/workspace/infinigen/roominfo.json", "r") as f:
+    #     j = json.load(f)
+    #     save_dir = j["save_dir"]
+    save_dir = args.save_dir
+    os.environ["save_dir"] = save_dir
+
+    with open(f"{save_dir}/args.json", "r") as f:
         j = json.load(f)
         args.iter = j["iter"]
         args.action = j["action"]
         args.description = j["description"]
         args.inplace = j["inplace"]
         args.json_name = j["json_name"]
-
-    with open("/home/yandan/workspace/infinigen/roominfo.json", "r") as f:
-        j = json.load(f)
-        save_dir = j["save_dir"]
-        os.environ["save_dir"] = save_dir
 
     if not os.path.exists(f"{save_dir}/args"):
         os.system(f"mkdir {save_dir}/args")
@@ -543,6 +547,6 @@ if __name__ == "__main__":
         os.system(
             f"cp {save_dir}/args/args_{args.iter}.json {save_dir}/args/args_{args.iter}_inplaced.json"
         )
-    os.system(f"cp args.json {save_dir}/args/args_{args.iter}.json")
+    os.system(f"cp {save_dir}/args.json {save_dir}/args/args_{args.iter}.json")
 
     main(args)

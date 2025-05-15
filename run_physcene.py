@@ -31,18 +31,20 @@ def calculate_room_size(data):
 
 
 # Paths
-method = "diffuscene"
+method = "physcene"
 args_path = f"args_{method}.json"
 roominfo_path = f"roominfo_{method}.json"
 
 # roomtype = "livingroom"
-for  roomtype in ["bedroom","livingroom"]:
-    basedir = "/home/yandan/workspace/PhyScene/3D_front/generate_filterGPN_clean"
-    files = os.listdir(basedir)
-    files = [i for i in files if roomtype in i and i.endswith(".json")]
-    random.shuffle(files)
-    for i in range(3):
-        json_name = f"{basedir}/{files[i]}"
+lst = {
+    "livingroom":["LivingDiningRoom-2954_livingroom.json","LivingDiningRoom-1344_livingroom.json","LivingDiningRoom-2917_livingroom.json"],
+    "bedroom":["Bedroom-1861_bedroom.json","Bedroom-5666_bedroom.json","Bedroom-74627_bedroom.json"]
+}
+basedir = "/home/yandan/workspace/PhyScene/3D_front/generate_filterGPN_clean"
+for  roomtype in ["livingroom","bedroom"]:
+    for i in range(len(lst[roomtype])):
+        file = lst[roomtype][i]
+        json_name = f"{basedir}/{file}"
         # json_name = "/home/yandan/workspace/PhyScene/3D_front/generate_filterGPN_clean/LivingDiningRoom-13061_livingroom.json"
         print(f"\n=== Running Task {i} ===")
 
@@ -82,7 +84,7 @@ for  roomtype in ["bedroom","livingroom"]:
             "--task",
             "coarse",
             "--method",
-            f"{method}",
+            "diffuscene",
             "--output_folder",
             "outputs/indoors/coarse_expand_whole_nobedframe",
             "-g",

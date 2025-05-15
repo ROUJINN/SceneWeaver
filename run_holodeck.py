@@ -13,7 +13,8 @@ basedir = "/mnt/fillipo/yandan/scenesage/Holodeck0509/"
 outdir = "/mnt/fillipo/yandan/scenesage/record_scene/holodeck/"
 roomtypes = os.listdir(basedir)
 for  roomtype in roomtypes:
-    if roomtype not in ["bathroom","children_room","classroom","gameroom","gym","kitchen","laundromat","meetingroom","office","restaurant","waitingroom"]:
+    if roomtype not in ["office"]:
+    # if roomtype not in ["bathroom","children_room","classroom","gameroom","gym","kitchen","laundromat","meetingroom","office","restaurant","waitingroom"]:
         continue
     os.makedirs(f"{outdir}/{roomtype}/",exist_ok=True)
     for idx in range(3):

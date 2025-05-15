@@ -16,7 +16,7 @@ DESCRIPTION = """
 Using GPT to generate the foundamental scene.
 
 Supported Room Types: any room type.
-Use Case 1: Create a accurate and foundational layout.
+Use Case 1: Create an accurate and foundational layout.
 
 Strengths: Align well with user demand. More details. Highly versatile and capable of generating scenes for any room type and complex user requirement. Flexible with respect to room design and customization.
 Weaknesses: May not be as real as data-driven methods. 
@@ -65,7 +65,7 @@ class InitGPTExecute(BaseTool):
             # init scene
             json_name, roomsize = self.gen_gpt_scene(user_demand, ideas, roomtype)
             save_dir = os.getenv("save_dir")
-            with open(f"/home/yandan/workspace/infinigen/roominfo.json", "w") as f:
+            with open(f"{save_dir}/roominfo.json", "w") as f:
                 info = {
                     "action": action,
                     "ideas": ideas,
@@ -75,7 +75,7 @@ class InitGPTExecute(BaseTool):
                 }
                 json.dump(info, f, indent=4)
             os.system(
-                f"cp /home/yandan/workspace/infinigen/roominfo.json {save_dir}/roominfo.json"
+                f"cp  {save_dir}/roominfo.json /home/yandan/workspace/infinigen/roominfo.json"
             )
 
             success = update_infinigen(action, iter, json_name, ideas=ideas)

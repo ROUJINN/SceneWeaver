@@ -18,7 +18,7 @@ DESCRIPTION = """
 Load the most related scene from a Real2Sim indoor scene dataset as the basic scene.
 Ideal for generating foundational layouts for common room types.
 
-Only Supported Room Types: living room, dining room, bedroom, bathroom, kitchen, office, laundry room, and classroom.
+Only Supported Room Types: living room, dining room, bedroom, bathroom, kitchen, hotel, office, laundry room, and classroom.
 Use Case 1: Create a foundational layout.
 
 Strengths: Provides a ready-made layout based on real-world data. Rich of details.
@@ -69,7 +69,7 @@ class InitMetaSceneExecute(BaseTool):
             json_name, roomsize = self.find_metascene(user_demand, ideas, roomtype)
             roomsize = self.get_roomsize(user_demand, ideas, roomsize, roomtype)
             success = get_scene_frontview(json_name)
-            with open("/home/yandan/workspace/infinigen/roominfo.json", "w") as f:
+            with open(f"{save_dir}/roominfo.json", "w") as f:
                 info = {
                     "action": action,
                     "ideas": ideas,
@@ -80,7 +80,7 @@ class InitMetaSceneExecute(BaseTool):
                 }
                 json.dump(info, f, indent=4)
             os.system(
-                f"cp /home/yandan/workspace/infinigen/roominfo.json {save_dir}/roominfo.json"
+                f"cp {save_dir}/roominfo.json /home/yandan/workspace/infinigen/roominfo.json"
             )
             success = update_infinigen(action, iter, json_name, ideas=ideas)
             assert success
@@ -148,8 +148,8 @@ class InitMetaSceneExecute(BaseTool):
 
         scenes = j["scenes"]
 
-        scene_id = find_scene_id()
-        # scene_id = "scene0592_00"
+        # scene_id = find_scene_id()
+        scene_id = "scene0653_00"
         json_name = scene_id
 
         with open(

@@ -141,8 +141,11 @@ if __name__ == "__main__":
 
         LoadObjavFiles = dict()
         for category, cnt in LoadObjavCnts.items():
+            if category.lower() == "meeting_table":
+                a = 1
             if category.lower() == "car":
-                LoadObjavFiles[category].append("/home/yandan/.objaverse/hf-objaverse-v1/glbs/000-068/45840e2136c44080b4c1e7521cce8db3.glb")
+                LoadObjavFiles["car"]=["/home/yandan/.objaverse/hf-objaverse-v1/glbs/000-068/45840e2136c44080b4c1e7521cce8db3.glb"]
+                continue
             # text = preprocess(f"A high-poly {roomtype} {category} in high quality")
             text = preprocess(f"A high-poly realistic {category} in high quality")
             device = clip_model.device
@@ -156,7 +159,8 @@ if __name__ == "__main__":
             # pdb.set_trace()
             for i in range(len(retrieved_objs)):
                 retrieved_obj = retrieved_objs[i]
-                if retrieved_obj["u"] in ["75e4d132d8e5480e99f915f0464aeff0","45a2ad85a21d46fabfe38d492ed3ec04",\
+                if retrieved_obj["u"] in ["df9af4b3c2ea40d89a736741e8c07bb1",
+                                          "75e4d132d8e5480e99f915f0464aeff0","45a2ad85a21d46fabfe38d492ed3ec04",\
                                         "90aae32de40c458e846a3705105e5cad","9d2946e980354264bf6be4a41f21f81e",\
                                         "d7403315f4934dbd913578dc32f1962f","6cbddf0c4c5a4cacad14c6a8fa94f22c",\
                                         "907649f7c56e478dac505f91318f59cc","6bdcf3960b434396b5a194f6685e2cbc",\

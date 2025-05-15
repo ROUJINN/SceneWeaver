@@ -1,6 +1,6 @@
 import os
 
-from app.agent.scenedesigner import SceneDesigner
+from app.agent.scenedesigner_multistep import SceneDesigner
 from app.logger import logger
 
 
@@ -47,14 +47,12 @@ if __name__ == "__main__":
     #"Design me a waiting room.","Design me a laundry room."
     #"Design me a restaurant room.",
     #"Design me an office."
-    # prompts = [
-            #    "Design me a small bookstore with some shelfs, reading tables and chairs. Each shelf is full of objects and has more than 10 books inside, no book on the ground. Add lamp, books, and other objects on the table. "] #computer room
-    prompts = ["A bedroom rich of furniture, decoration on the wall, and small objects."]
-    # prompts = ["An office room with desks well organized and each chair faces the desk."]
+    prompts = [
+               "Design me a kitchen room."] #computer room
     for p in prompts:
         for i in range(1):
             prompt = p
-            main(prompt, i)
+            main(prompt, 2+i)
             # try:
             #     prompt = p
             #     main(prompt, i+2)

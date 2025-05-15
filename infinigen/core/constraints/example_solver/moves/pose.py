@@ -99,6 +99,8 @@ class TranslateMove(moves.Move):
             use_initial=True,
             closest_surface=True,  ##TODO YYD closest_surface
         )
+        if parent_planes is None:
+            parent_planes = []
         # print("222",state.objs["5865980_BookStackFactory"].obj.location)
         obj_state.dof_matrix_translation = combined_stability_matrix(
             parent_planes

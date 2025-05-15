@@ -7,13 +7,15 @@ import time
 args_path = "args_layoutgpt.json"
 roominfo_path = "roominfo_layoutgpt.json"
 
-basedir = "/mnt/fillipo/yandan/scenesage/LayoutGPT0509/"
+basedir = "/mnt/fillipo/yandan/scenesage/LayoutGPT05133/"
 outdir = "/mnt/fillipo/yandan/scenesage/record_scene/layoutgpt/"
 # roomtype = "livingroom"
 roomtypes = os.listdir(basedir)
 for  roomtype in roomtypes: # ["bedroom","livingroom"]:
-    if roomtype not in ["bathroom","children_room","classroom","gameroom","gym","kitchen","laundromat","meetingroom","office","restaurant","waitingroom"]:
+    if roomtype not in ["meetingroom","office","restaurant","waitingroom","bathroom","children_room","gym","kitchen"]:
         continue
+    # if roomtype not in ["garage"]:
+    #     continue
     os.makedirs(f"{outdir}/{roomtype}/",exist_ok=True)
     for i in range(1,4):
         # for i in [11,13,18]:

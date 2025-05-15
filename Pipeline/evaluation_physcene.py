@@ -237,13 +237,13 @@ You are working in a 3D scene environment with the following conventions:
 
 
 if __name__ == "__main__":
-    method = "idesign" #"classroom","grameroom", \
+    method = "physcene" #"classroom","grameroom", \
     # roomtype = "bedroom" #idesign bathroom [7.4, 7.2, 7.4, 5.4, 9.6, 0.0, 0.0] #"childrenroom"
-    for roomtype in [ "bookstore"]:
+    for roomtype in [ "livingroom","bedroom"]:
         
         for i in range(5):
             try:
-                save_dir = f"/mnt/fillipo/yandan/scenesage/record_scene/{method}/{roomtype}/scene_{i}"
+                save_dir = f"/mnt/fillipo/yandan/scenesage/record_scene/{method}/{roomtype}/{roomtype}_{i}"
                 os.environ["save_dir"] = save_dir
                 print(f"evaluating {method} {roomtype}_{i}")
                 if not os.path.exists(f"{save_dir}/record_files/metric_0.json"):
@@ -271,7 +271,7 @@ if __name__ == "__main__":
         try:
             for i in range(5):
                 
-                save_dir = f"/mnt/fillipo/yandan/scenesage/record_scene/{method}/{roomtype}/scene_{i}"
+                save_dir = f"/mnt/fillipo/yandan/scenesage/record_scene/{method}/{roomtype}/{roomtype}_{i}"
                 if not os.path.exists(f"{save_dir}/pipeline/trajs_0.json"):
                     continue
                 with open(f"{save_dir}/pipeline/trajs_0.json", "r") as f:

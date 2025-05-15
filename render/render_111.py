@@ -258,7 +258,7 @@ def setup_camera(margin=1.05, resolution=720):
     distance = max_extent / (2 * math.tan(fov_rad / 2))
 
     # cam.location = center + Vector((0, -distance*1.5, height * 0.7))
-    cam.location = center + Vector((0, -distance*1.5, distance*1.5/1.732))
+    cam.location = center + Vector((0, -distance*1.3, distance*1.3/1.732))
     cam.location.x = 0
     cam.rotation_euler = Euler((math.radians(60), 0, 0), 'XYZ')
     cam.data.lens_unit = 'FOV'
@@ -309,15 +309,18 @@ def render_views(anchor, angles_deg, output_dir,render_type="eevee"):
         bpy.context.scene.render.filepath = os.path.join(output_dir, f"{render_type}_idesign_1_view_{angle:03}.png")
         bpy.ops.render.render(write_still=True)
 
-#        break
-
 def rotate_scene(anchor, angle):
+
     anchor.rotation_euler = Euler((0, 0, math.radians(angle)), 'XYZ')
     bpy.context.view_layer.update()
 
+
+#        break
+        
+
 if __name__ == "__main__":
     import sys
-    roomdir = sys.argv[-1] #"/mnt/fillipo/yandan/scenesage/record_scene/manus/0_laundry_room/Design_me_a_laundry_room_2/"
+#    roomdir = "/mnt/fillipo/yandan/scenesage/record_scene/layoutgpt/restaurant/restaurant_2/"
     # outdir = "/mnt/fillipo/yandan/scenesage/record_scene/holodeck/"
     # roomtypes = os.listdir(outdir)
     # for roomtype in roomtypes:
@@ -330,16 +333,15 @@ if __name__ == "__main__":
     # if os.path.exists(blendfile):
     #     bpy.ops.wm.open_mainfile(filepath=blendfile, load_ui=False, use_scripts=False)
 
-    delete_collections_and_objects_by_name_keywords(["wall", "window", "placeholder", "bbox","ceiling"])
-    add_light(strength=20)
-    add_wall()
-    center_scene()
-    setup_camera(resolution=1024)
+#    delete_collections_and_objects_by_name_keywords(["wall", "window", "placeholder", "bbox","ceiling"])
+#    add_light(strength=20)
+#    add_wall()
+#    center_scene()
+    setup_camera(resolution=2048)
     anchor = setup_rotation_anchor()
     bpy.context.scene.render.engine = 'CYCLES' #'CYCLES' #'BLENDER_EEVEE_NEXT'
     #print("Current render engine:", bpy.context.scene.render.engine)
-    render_views(anchor, anles_deg=range(0,360,90),output_dir=roomdir,render_type="cycle")
-    # rotate_scene(anchor, angle=270)
+    rotate_scene(anchor, angle=90)
 
     #~/software/blender-4.2.0-linux-x64$ ./blender --background --python /home/yandan/workspace/infinigen/render/render_scene.py
     # /home/yandan/software/blender-4.2.0-linux-x64/blender /mnt/fillipo/yandan/scenesage/record_scene/holodeck//waitingroom/waitingroom_0/record_files/scene_0.blend --background --python /home/yandan/workspace/infinigen/render/render_scene.py

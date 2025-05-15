@@ -60,19 +60,19 @@ class SceneDesigner:
     special_tool_names = Terminate().name
 
     max_observe: int = 10000
-    max_steps: int = 20
+    max_steps: int = 10
     duplicate_threshold: int = 2
 
     # Add general-purpose tools to the tool collection
-    available_tools0 = ToolCollection(
-        InitGPTExecute(), InitMetaSceneExecute(), InitPhySceneExecute()
-    )
     # available_tools0 = ToolCollection(
-    #         InitGPTExecute()
-    #     )
+    #     InitGPTExecute(), InitMetaSceneExecute(), InitPhySceneExecute()
+    # )
+    available_tools0 = ToolCollection(
+            InitGPTExecute()
+        )
     available_tools1 = ToolCollection(
-        AddAcdcExecute(),
-        AddGPTExecute(),
+        # AddAcdcExecute(),
+        # AddGPTExecute(),
         AddRelationExecute(),
         UpdateLayoutExecute(),
         UpdateRotationExecute(),
@@ -486,7 +486,7 @@ class SceneDesigner:
 
         results: List[str] = []
 
-        self.current_step = 0
+        self.current_step = 1
         save_dir = os.getenv("save_dir")
         memory_path = f"{save_dir}/pipeline/memory_{self.current_step}.pkl"
         while(os.path.exists(memory_path)):

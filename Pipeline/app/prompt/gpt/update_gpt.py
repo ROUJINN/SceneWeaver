@@ -35,7 +35,7 @@ Here is the information you receive:
 1.This is a {roomtype}. 
 2.The room size is [{roomsize}] in length and width.
 3.User demand for the entire scene: {user_demand}
-4.Ideas for this step (only for reference !!): {ideas}.  Do not limited to the ideas.
+4.Ideas for this step (only for reference !!): {ideas}.  Do not limited to the ideas. Check if the idea is reasonable carefully.
 5.This is the scene layout: {layout}
 6.This is the layout of door and windows: {structure}
 7.This is the image render from the top view: SCENE_IMAGE 

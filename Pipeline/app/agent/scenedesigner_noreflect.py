@@ -11,7 +11,7 @@ from app.evaluation import eval_scene
 from app.exceptions import TokenLimitExceeded
 from app.llm import LLM
 from app.logger import logger
-from app.prompt.scenedesigner import NEXT_STEP_PROMPT, SYSTEM_PROMPT
+from app.prompt.scenedesigner_noreflect import NEXT_STEP_PROMPT, SYSTEM_PROMPT
 from app.prompt.sceneinfo import sceneinfo_prompt
 from app.schema import (
     ROLE_TYPE,
@@ -64,14 +64,14 @@ class SceneDesigner:
     duplicate_threshold: int = 2
 
     # Add general-purpose tools to the tool collection
-    available_tools0 = ToolCollection(
-        InitGPTExecute(), InitMetaSceneExecute(), InitPhySceneExecute()
-    )
     # available_tools0 = ToolCollection(
-    #         InitGPTExecute()
-    #     )
+    #     InitGPTExecute(), InitMetaSceneExecute(), InitPhySceneExecute()
+    # )
+    available_tools0 = ToolCollection(
+            InitGPTExecute()
+        )
     available_tools1 = ToolCollection(
-        AddAcdcExecute(),
+        # AddAcdcExecute(),
         AddGPTExecute(),
         AddRelationExecute(),
         UpdateLayoutExecute(),
@@ -258,10 +258,13 @@ class SceneDesigner:
         retry = 0
         while True and retry < 3:
             try:
-                if len(self.messages) > 7:
-                    messages = [self.messages[0]] + self.messages[-6:]
-                else:
-                    messages = self.messages
+                self.messages[3].content = "success"
+                messages = [self.messages[0]]+[i for i in self.messages if i.role in ["tool","assistant"]]+[self.messages[-1]]
+                # messages = [self.messages[0]] + self.messages[-1:]
+                # if len(self.messages) >= 7:
+                #     messages = [self.messages[0]] + self.messages[-1:]
+                # else:
+                #     messages = self.messages
                 # Get response with tool options
                 response = self.llm.ask_tool(
                     messages=messages,
@@ -486,7 +489,7 @@ class SceneDesigner:
 
         results: List[str] = []
 
-        self.current_step = 0
+        self.current_step = 1
         save_dir = os.getenv("save_dir")
         memory_path = f"{save_dir}/pipeline/memory_{self.current_step}.pkl"
         while(os.path.exists(memory_path)):

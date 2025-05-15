@@ -244,59 +244,72 @@ You are working in a 3D scene environment with the following conventions:
 
 
 if __name__ == "__main__":
-    roomtype = "living_room"
-    # for i in range(10):
-    #     save_dir = f"/mnt/fillipo/yandan/scenesage/record_scene/manus/Design_me_a_{roomtype}_{i}"
-    #     img_dir = f"{save_dir}/record_scene"
-    #     max_iter = 0
-    #     for file in os.listdir(img_dir):
-    #         if file.endswith(".jpg") and len(file.split("_"))==2:
-    #             iter = int(file.split("_")[1].split(".")[0])
-    #             max_iter = max(max_iter,iter)
-    #     os.environ["save_dir"] = save_dir
-    #     print(f"evaluating ours Design_me_a_{roomtype}_{i} in iter {max_iter}")
+    # roomtype = "bathroom"
+    for roomtype in ["kitchen"]:
+    
+        # for i in range(10):
+        #     save_dir = f"/mnt/fillipo/yandan/scenesage/record_scene/manus/Design_me_a_{roomtype}_{i}"
+        #     img_dir = f"{save_dir}/record_scene"
+        #     max_iter = 0
+        #     for file in os.listdir(img_dir):
+        #         if file.endswith(".jpg") and len(file.split("_"))==2:
+        #             iter = int(file.split("_")[1].split(".")[0])
+        #             max_iter = max(max_iter,iter)
+        #     os.environ["save_dir"] = save_dir
+        #     print(f"evaluating ours Design_me_a_{roomtype}_{i} in iter {max_iter}")
 
-    #     eval_scene(
-    #         max_iter,
-    #         f"Design me a {roomtype}.",
-    #     )
+        #     eval_scene(
+        #         max_iter,
+        #         f"Design me a {roomtype}.",
+        #     )
 
-    score = {
-        "gpt_real": [],
-        "gpt_function": [],
-        "gpt_layout": [],
-        "gpt_complet": [],
-        "NObj": [],
-        "BBO": [],
-        "BBL": [],
-    }
+        score = {
+            "gpt_real": [],
+            "gpt_function": [],
+            "gpt_layout": [],
+            "gpt_complet": [],
+            "NObj": [],
+            "BBO": [],
+            "BBL": [],
+        }
 
-    # for i in [10,12,14,15,16,17,19]:
-    for i in range(10):
-        save_dir = f"/mnt/fillipo/yandan/scenesage/record_scene/manus/Design_me_a_{roomtype}_{i}"
-        img_dir = f"{save_dir}/record_scene"
-        max_iter = 0
-        for file in os.listdir(img_dir):
-            if file.endswith(".jpg") and len(file.split("_")) == 2:
-                iter = int(file.split("_")[1].split(".")[0])
-                max_iter = max(max_iter, iter)
+        # for i in [10,12,14,15,16,17,19]:
+        basedir = f"/mnt/fillipo/yandan/scenesage/record_scene/manus/0_{roomtype}_nophy/"
+        for file in os.listdir(basedir):
+        # for i in range(10):
+            
+            save_dir = f"{basedir}/{file}"
+            img_dir = f"{save_dir}/record_scene"
+            max_iter = 0
+            for file in os.listdir(img_dir):
+                if file.endswith(".jpg") and len(file.split("_")) == 2:
+                    try:
+                        iter = int(file.split("_")[1].split(".")[0])
+                    except:
+                        continue
+                    if os.path.exists(f"{save_dir}/pipeline/trajs_{iter}.json"):
+                        max_iter = max(max_iter, iter)
+            if max_iter==0:
+                continue
+            with open(f"{save_dir}/pipeline/trajs_{max_iter}.json", "r") as f:
+                j = json.load(f)
 
-        with open(f"{save_dir}/pipeline/trajs_{max_iter}.json", "r") as f:
-            j = json.load(f)
+            print(save_dir)
+            gptscore = j[str(max_iter)]["results"]["GPT score (0-10, higher is better)"]
+            score["gpt_real"].append(gptscore["realism"]["grade"])
+            score["gpt_function"].append(gptscore["functionality"]["grade"])
+            score["gpt_layout"].append(gptscore["layout"]["grade"])
+            score["gpt_complet"].append(gptscore["completion"]["grade"])
 
-        gptscore = j[str(max_iter)]["results"]["GPT score (0-10, higher is better)"]
-        score["gpt_real"].append(gptscore["realism"]["grade"])
-        score["gpt_function"].append(gptscore["functionality"]["grade"])
-        score["gpt_layout"].append(gptscore["layout"]["grade"])
-        score["gpt_complet"].append(gptscore["completion"]["grade"])
+            physcore = j[str(max_iter)]["results"]["Physics score"]
+            score["NObj"].append(physcore["object number"])
+            score["BBO"].append(len(physcore["object not inside the room"]))
+            score["BBL"].append(len(physcore["object has collision"]))
+        
 
-        physcore = j[str(max_iter)]["results"]["Physics score"]
-        score["NObj"].append(physcore["object number"])
-        score["BBO"].append(len(physcore["object not inside the room"]))
-        score["BBL"].append(len(physcore["object has collision"]))
+        score_mean = dict()
+        for key, value in score.items():
+            score_mean[key] = round(np.mean(value), 3)
 
-    score_mean = dict()
-    for key, value in score.items():
-        score_mean[key] = round(np.mean(value), 3)
-
-    print(score_mean)
+        # print(score_mean)
+        print("ours",roomtype,list(score_mean.values()))

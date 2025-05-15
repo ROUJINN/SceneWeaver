@@ -1,6 +1,6 @@
 import os
 
-from app.agent.scenedesigner import SceneDesigner
+from app.agent.scenedesigner_nomodifier import SceneDesigner
 from app.logger import logger
 
 
@@ -8,12 +8,15 @@ def main(prompt, i):
     agent = SceneDesigner()
     try:
         # prompt = "Design me a bedroom."
-        save_dir = "/mnt/fillipo/yandan/scenesage/record_scene/manus/" + prompt[
+        save_dir = "/mnt/fillipo/yandan/scenesage/record_scene/manus/0_kitchen_nomodifier/" + prompt[
             :30
         ].replace(" ", "_").replace(".", "").replace(",", "_").replace("[", "").replace(
             "]", ""
         )
+        
         save_dir = save_dir + "_" + str(i)
+        os.system(f"cp {save_dir}/roominfo.json /home/yandan/workspace/infinigen/roominfo.json")
+        
         if not os.path.exists(save_dir):
             os.system(f"mkdir {save_dir}")
             os.system(f"mkdir {save_dir}/pipeline")
@@ -47,12 +50,10 @@ if __name__ == "__main__":
     #"Design me a waiting room.","Design me a laundry room."
     #"Design me a restaurant room.",
     #"Design me an office."
-    # prompts = [
-            #    "Design me a small bookstore with some shelfs, reading tables and chairs. Each shelf is full of objects and has more than 10 books inside, no book on the ground. Add lamp, books, and other objects on the table. "] #computer room
-    prompts = ["A bedroom rich of furniture, decoration on the wall, and small objects."]
-    # prompts = ["An office room with desks well organized and each chair faces the desk."]
+    prompts = [
+               "Design me a kitchen."] #computer room
     for p in prompts:
-        for i in range(1):
+        for i in range(3):
             prompt = p
             main(prompt, i)
             # try:

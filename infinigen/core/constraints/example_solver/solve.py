@@ -511,9 +511,17 @@ class Solver:
         # after loading name mapping, retrieve objects.
         self.retrieve_objav_assets(info["Number of new furniture"], self.name_mapping)
 
-        for step in ["large", "medium", "small"]:
-            for key, value in self.Placement.items():
+
+        ordered_names = self.get_ordered_objects(self.Placement)
+            # for key, value in Placement.items():
+        for step in ["large", "medium","small"]:
+            for key in ordered_names:   
+                value = self.Placement[key]
                 for num in value.keys():
+
+        # for step in ["large", "medium", "small"]:
+        #     for key, value in self.Placement.items():
+        #         for num in value.keys():
                     if not num.isdigit():
                         print(f"🎯 Error adding object {key}")
                         continue
@@ -566,6 +574,8 @@ class Solver:
                                 parent_obj_name, relation = value[num]["parent"]
                             except:
                                 parent_key, parent_num, relation = value[num]["parent"]
+                                if "name" not in self.Placement[parent_key][ parent_num]:
+                                    continue
                                 parent_obj_name = self.Placement[parent_key][
                                     parent_num
                                 ]["name"]
@@ -1022,7 +1032,7 @@ class Solver:
         for obj_type in object_types:
             instances = placement_dict[obj_type]
             for instance_id, instance in instances.items():
-                if 'parent' in instance:
+                if 'parent' in instance and instance['parent'] is not None and len(instance['parent'])>0:
                     parent_type = instance['parent'][0]
                     if parent_type in graph:
                         graph[parent_type].append(obj_type)
@@ -1070,6 +1080,8 @@ class Solver:
                     name = key
                     if name not in self.name_mapping:
                         name = name.lower()
+                    if name not in self.name_mapping:
+                        continue
                     module_and_class = self.name_mapping[name]
                     if stage == "small":
                         pass 
@@ -1748,10 +1760,31 @@ class Solver:
         self,
     ):
         metadata = os.getenv("JSON_RESULTS")
-        scene_idx = metadata.split("_")[-1].split(".")[0]
+        
 
+        def get_obj_cnt(data):
+            # Count types
+            big_category_dict = {}
+
+            for obj in data:
+                if obj["new_object_id"] not in [
+                    "south_wall",
+                    "north_wall",
+                    "east_wall",
+                    "west_wall",
+                    "middle of the room",
+                    "ceiling",
+                ]:
+                    obj_type = "_".join(obj["new_object_id"].split("_")[:-1])
+                    if obj_type not in big_category_dict:
+                        big_category_dict[obj_type] = 0
+                    big_category_dict[obj_type] += 1
+            return big_category_dict
+        
         with open(metadata, "r") as f:
             data = json.load(f)
+            category_dict = get_obj_cnt(data)
+            self.retrieve_objav_assets(category_dict)
             Placement = {}
             for item in data:
                 if item["new_object_id"] not in [
@@ -1764,7 +1797,10 @@ class Solver:
                 ]:
                     Placement[item["new_object_id"]] = item
 
-        asset_dir = f"/mnt/fillipo/yandan/scenesage/idesign/scene_sage/assets_retrieve_by_IDesign/scene_{scene_idx}"
+        
+
+        
+        # asset_dir = f"/mnt/fillipo/yandan/scenesage/idesign/scene_sage/assets_retrieve_by_IDesign/scene_{scene_idx}"
         for key, value in Placement.items():
             # name = key
 
@@ -1797,7 +1833,8 @@ class Solver:
             rotation = (
                 -(math.radians(value["rotation"]["z_angle"]) + math.pi) - math.pi / 2
             )
-            asset_file = f"{asset_dir}/{key}.glb"
+            # asset_file = f"{asset_dir}/{key}.glb"
+            asset_file = self.LoadObjavFiles[category][0]
 
             gen_class = GeneralObjavFactory
             gen_class._x_dim = x_dim
@@ -1873,7 +1910,7 @@ class Solver:
             return big_category_dict
 
         metadata = os.getenv("JSON_RESULTS")
-        scene_idx = metadata.split("_")[-1].split(".")[0]
+        # scene_idx = metadata.split("_")[-1].split(".")[0]
         with open(metadata, "r") as f:
             data = json.load(f)
             category_dict = get_obj_cnt(data)

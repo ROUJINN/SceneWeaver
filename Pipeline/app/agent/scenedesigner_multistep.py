@@ -11,7 +11,7 @@ from app.evaluation import eval_scene
 from app.exceptions import TokenLimitExceeded
 from app.llm import LLM
 from app.logger import logger
-from app.prompt.scenedesigner import NEXT_STEP_PROMPT, SYSTEM_PROMPT
+from app.prompt.scenedesigner_multistep import NEXT_STEP_PROMPT, SYSTEM_PROMPT
 from app.prompt.sceneinfo import sceneinfo_prompt
 from app.schema import (
     ROLE_TYPE,
@@ -63,15 +63,10 @@ class SceneDesigner:
     max_steps: int = 20
     duplicate_threshold: int = 2
 
-    # Add general-purpose tools to the tool collection
-    available_tools0 = ToolCollection(
-        InitGPTExecute(), InitMetaSceneExecute(), InitPhySceneExecute()
-    )
-    # available_tools0 = ToolCollection(
-    #         InitGPTExecute()
-    #     )
-    available_tools1 = ToolCollection(
-        AddAcdcExecute(),
+
+    available_tools = ToolCollection(
+        InitGPTExecute(),# InitMetaSceneExecute(), InitPhySceneExecute(),
+        # AddAcdcExecute(),
         AddGPTExecute(),
         AddRelationExecute(),
         UpdateLayoutExecute(),
@@ -80,10 +75,7 @@ class SceneDesigner:
         Terminate(),
         RemoveExecute(),
     )
-    # available_tools1 = ToolCollection(
-    #         Terminate()
-    #     )
-    available_tools2 = ToolCollection(Terminate())
+
     current_step: int = 0
     memory = Memory()
     state = AgentState.IDLE
@@ -251,15 +243,56 @@ class SceneDesigner:
             user_msg = Message.user_message(sceneinfo_prompt, base64_image=base64_image)
             self.messages.append(user_msg)
 
-        if self.next_step_prompt:
-            user_msg = Message.user_message(self.next_step_prompt)
-            self.messages.append(user_msg)
+        # if self.next_step_prompt:
+        #     user_msg = Message.user_message(self.next_step_prompt)
+        #     self.messages.append(user_msg)
 
+        # ideas_lst = {
+        #     0:"Initialize foundational kitchen layout.",
+        #     1: "Add small appliances and countertop accessories.",
+        #     2: "Add dining table and chairs if space allows.",
+        #     3:"Add wall-mounted shelves/cabinets.",
+        #     4:"Add small objects inside/on storage.",
+        #     5:"Refine object relations for tidiness and logic.",
+        #     6:"End the scene synthesis."
+        # }
+
+        # ideas_lst = {
+        #             1:"Initialize the foundational kitchen layout using a data-driven method to ensure structural plausibility and typical kitchen organization.",
+        #             2:"Add essential kitchen appliances and fixtures if not already present (e.g., refrigerator, stove/oven, sink, dishwasher).",
+        #             3:"Add supporting furniture such as a kitchen island or dining table with chairs, if space allows.",
+        #             4:"Add storage elements like wall-mounted cabinets or shelves if not already present.",
+        #             5:"Place small kitchen appliances (e.g., microwave, toaster, coffee maker) on available countertop space.",
+        #             6:"Add a few small objects on countertops and inside open shelves/cabinets (e.g., dishes, pots, utensils, spice jars).",
+        #             7:"Add functional wall-mounted objects (e.g., clock, small artwork, or a wall-mounted spice rack).",
+        #             8:"Adjust the placement of large objects to ensure there is enough circulation space and that work triangles (sink, stove, refrigerator) are logically arranged.",
+        #             9:"Refine object rotations so that chairs face the table, appliances are oriented correctly, and items on countertops are aligned naturally.",
+        #             10:"Terminate the scene synthesis if the kitchen is neither crowded nor empty and all functional and spatial requirements are met."
+        # }
+        ideas_lst = {
+                 1:"Initialize the Scene (init_gpt)",
+                 2:"Add Relations (add_relation)",
+                 3:"Add Large Supporting Objects (add_gpt)",
+                 4:"Add any missing large supportingobjects such as a kitchen island, pantry cabinet, or bar stools, if space allows, to enhance functionality without crowding.",
+                 4:"Add Small Functional Objects (add_gpt)",
+                 5:"Add Objects Inside Cabinets/Shelves (add_gpt)",
+                 6:"Add Wall-Mounted Functional/Decorative Objects (add_gpt)",
+                 7: "Adjust Layout if Needed (update_layout)",
+                 8:"Adjust Rotations if Needed (update_rotation)",
+                 9:"Adjust Sizes if Needed (update_size)",
+                 10:"Remove Redundant or Crowded Objects (remove_object)",
+                 11:"Terminate (terminate)"}
+                
+
+        idea_this_step = ideas_lst[self.current_step+1]
+        user_msg = Message.user_message(idea_this_step)
+        self.messages.append(user_msg)
+        #scene0149_00
         retry = 0
         while True and retry < 3:
             try:
                 if len(self.messages) > 7:
-                    messages = [self.messages[0]] + self.messages[-6:]
+                    messages = [self.messages[0]] + self.messages[-3:]
                 else:
                     messages = self.messages
                 # Get response with tool options
@@ -404,8 +437,9 @@ class SceneDesigner:
 
         try:
             # Parse arguments
+            
             args = json.loads(command.function.arguments or "{}")
-
+            
             # Execute the tool
             logger.info(f"🔧 Activating tool: '{name}'...")
             result = self.available_tools.execute(name=name, tool_input=args)
@@ -486,13 +520,13 @@ class SceneDesigner:
 
         results: List[str] = []
 
-        self.current_step = 0
+        self.current_step = 6
         save_dir = os.getenv("save_dir")
-        memory_path = f"{save_dir}/pipeline/memory_{self.current_step}.pkl"
-        while(os.path.exists(memory_path)):
-            os.system(f"cp {save_dir}/roominfo.json /home/yandan/workspace/infinigen/roominfo.json")
-            self.current_step += 1
-            memory_path = f"{save_dir}/pipeline/memory_{self.current_step}.pkl"
+        # memory_path = f"{save_dir}/pipeline/memory_{self.current_step}.pkl"
+        # while(os.path.exists(memory_path)):
+        #     os.system(f"cp {save_dir}/roominfo.json /home/yandan/workspace/infinigen/roominfo.json")
+        #     self.current_step += 1
+        #     memory_path = f"{save_dir}/pipeline/memory_{self.current_step}.pkl"
         # if os.path.exists(f"{save_dir}/pipeline/memory_{self.current_step}.pkl"):
         #     self.current_step += 1
             
@@ -510,18 +544,6 @@ class SceneDesigner:
                     os.environ["roomtype"] = roomtype
 
             os.environ["iter"] = str(self.current_step)
-
-            if self.current_step == 0:
-                self.available_tools = self.available_tools0
-            elif self.current_step < self.max_steps - 1:
-                self.available_tools = self.available_tools1
-                if (
-                    hasattr(self, "tool_calls")
-                    and self.tool_calls[0].function.name == "add_acdc"
-                ):  # modify size after using acdc
-                    self.available_tools = ToolCollection(UpdateSizeExecute())
-            else:
-                self.available_tools = self.available_tools2
 
             logger.info(f"Executing step {self.current_step}/{self.max_steps} for {save_dir}")
             step_result = self.step()
