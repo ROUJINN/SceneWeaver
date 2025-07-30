@@ -136,7 +136,7 @@ We provide two resource & retrieve pipeline for Objaverse (OpenShape & Holodeck)
 1. OpenShape
     Refer to [IDesign official repo](https://github.com/atcelen/IDesign/tree/main) and build the `idesign` conda env.
     Run the [inference code](https://github.com/atcelen/IDesign/tree/main?tab=readme-ov-file#inference) to download and build the openshape repo.
-    Then run `bash  retrieve.sh debug/`. If success, you will get a new file named`debug/objav_files.json`.
+    Then run `bash  SceneWeaver/run/retrieve.sh debug/`. If success, you will get a new file named`debug/objav_files.json`.
 
 2. Holodeck
     Refer to [Holodeck official repo](https://github.com/allenai/Holodeck?tab=readme-ov-file#data), build the conda env and then download the data.
