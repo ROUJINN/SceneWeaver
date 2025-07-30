@@ -189,7 +189,7 @@ if __name__ == "__main__":
                 current_file_path = os.path.abspath(__file__)
                 cmd = f"""
                 source /home/yandan/anaconda3/etc/profile.d/conda.sh
-                conda activate infinigen_python
+                conda activate infinigen
                 python {current_file_path}/blender_render.py {file_path} > run1.log 2>&1
                 """
                 subprocess.run(["bash", "-c", cmd])
@@ -198,7 +198,7 @@ if __name__ == "__main__":
 
                 cmd = f"""
                 source /home/yandan/anaconda3/etc/profile.d/conda.sh
-                conda activate layoutgpt
+                conda activate sceneweaver
                 python {current_file_path}/../../../Pipeline/app/tool/objaverse_frontview.py {render_folder} {category} > run2.log 2>&1
                 """
                 subprocess.run(["bash", "-c", cmd])
