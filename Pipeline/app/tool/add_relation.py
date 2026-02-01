@@ -1,7 +1,7 @@
 import json
 import os
 
-from gpt import GPT4
+from app.llm import LLM
 
 from app.prompt.add_relation import example, system_prompt, user_prompt
 from app.tool.base import BaseTool
@@ -101,12 +101,14 @@ def add_relation(user_demand, ideas, iter, roomtype):
         + example
     )
 
-    gpt = GPT4(version="4.1")
+    gpt = LLM()
 
-    prompt_payload = gpt.get_payload_scene_image(
-        system_prompt_1, user_prompt_1, render_path=render_path
+    gpt_text_response = gpt.ask_with_images(
+        [{"role": "user", "content": user_prompt_1}],
+        images=[render_path],
+        system_msgs=[{"role": "system", "content": system_prompt_1}],
+        temperature=0.0
     )
-    gpt_text_response = gpt(payload=prompt_payload, verbose=True)
     print(gpt_text_response)
 
     json_name = f"{save_dir}/pipeline/add_relation_results_{iter}_response.json"

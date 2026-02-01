@@ -4,7 +4,8 @@
 在.bashrc里有加alias lg="source /home/lj/mylogin.sh"
 在mylogin.sh里设置了我常用的API key，以及服务器代理的设置，所以跑任何python代码前，都需要
 `lg <conda_env_name>`
-来activate虚拟环境，并且顺便设置好环境变量
+来activate虚拟环境，并且顺便设置好环境变量。
+如果要单独的开一个bash来跑程序，那么就要在bash的开头先 `source /home/lj/mylogin.sh <conda_env_name>`
 
 ## Project Overview
 

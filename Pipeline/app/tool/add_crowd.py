@@ -1,7 +1,7 @@
 import json
 import os
 
-from gpt import GPT4
+from app.llm import LLM
 
 import app.prompt.gpt.add_crowd as prompts1
 import app.prompt.gpt.init_gpt as prompts0
@@ -60,7 +60,7 @@ class AddCrowdExecute(InitGPTExecute):
         return json_name
 
     def generate_scene_iter1_gpt(self, user_demand, ideas, iter, roomtype):
-        gpt = GPT4(version="4.1")
+        gpt = LLM()
 
         results = dict()
         save_dir = os.getenv("save_dir")
@@ -80,12 +80,12 @@ class AddCrowdExecute(InitGPTExecute):
             structure=layout["structure"],
         )
 
-        prompt_payload = gpt.get_payload_scene_image(
-            prompts1.step_1_big_object_prompt_system,
-            step_1_big_object_prompt_user,
-            render_path,
+        gpt_text_response = gpt.ask_with_images(
+            [{"role": "user", "content": step_1_big_object_prompt_user}],
+            images=[render_path],
+            system_msgs=[{"role": "system", "content": prompts1.step_1_big_object_prompt_system}],
+            temperature=0.0
         )
-        gpt_text_response = gpt(payload=prompt_payload, verbose=True)
         print(gpt_text_response)
 
         gpt_dict_response = extract_json(gpt_text_response)
@@ -107,9 +107,11 @@ class AddCrowdExecute(InitGPTExecute):
         user_prompt = prompts0.step_3_class_name_prompt_user.format(
             category_list=s, demand=user_demand
         )
-        system_prompt = prompts0.step_3_class_name_prompt_system
-        prompt_payload = gpt.get_payload(system_prompt, user_prompt)
-        gpt_text_response = gpt(payload=prompt_payload, verbose=True)
+        gpt_text_response = gpt.ask(
+            [{"role": "user", "content": user_prompt}],
+            system_msgs=[{"role": "system", "content": prompts0.step_3_class_name_prompt_system}],
+            temperature=0.0
+        )
         print(gpt_text_response)
 
         gpt_dict_response = extract_json(

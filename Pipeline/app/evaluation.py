@@ -4,7 +4,7 @@ import re
 import time
 
 import numpy as np
-from gpt import GPT4
+from app.llm import LLM
 
 from app.utils import dict2str
 
@@ -106,8 +106,7 @@ def eval_general_score(iter, user_demand):
         layout = layout["objects"]
         layout = dict2str(layout)
 
-    # gpt = GPT4(version="4.1",region="eastus2")
-    gpt = GPT4(version="4.1")
+    gpt = LLM()
 
     example_json = """
 {
@@ -200,18 +199,20 @@ You are working in a 3D scene environment with the following conventions:
 
 """
 
-    prompt_payload = gpt.get_payload_eval(
-        prompting_text_user=prompting_text_user, render_path=image_path_1
+    gpt_text_response = gpt.ask_with_images(
+        [{"role": "user", "content": prompting_text_user}],
+        images=[image_path_1],
+        temperature=0.0
     )
 
     grades = {"realism": [], "functionality": [], "layout": [], "completion": []}
     for _ in range(1):
         try:
-            grading_str = gpt(payload=prompt_payload, verbose=True)
+            print(gpt_text_response)
         except:
             time.sleep(30)
-            grading_str = gpt(payload=prompt_payload, verbose=True)
-        print(grading_str)
+            print(gpt_text_response)
+        grading_str = gpt_text_response
         print("-" * 50)
         pattern = r"```json(.*?)```"
         matches = re.findall(pattern, grading_str, re.DOTALL)

@@ -1,7 +1,7 @@
 import json
 import os
 
-from gpt import GPT4
+from app.llm import LLM
 
 import app.prompt.gpt.init_gpt as prompts
 from app.tool.base import BaseTool
@@ -88,7 +88,7 @@ class InitGPTExecute(BaseTool):
         return json_name, roomsize
 
     def generate_scene_iter0(self, user_demand, ideas, roomtype):
-        gpt = GPT4("4.1")
+        gpt = LLM()
 
         results = dict()
 
@@ -96,10 +96,11 @@ class InitGPTExecute(BaseTool):
         user_prompt = prompts.step_1_big_object_prompt_user.format(
             demand=user_demand, ideas=ideas, roomtype=roomtype
         )
-        prompt_payload = gpt.get_payload(
-            prompts.step_1_big_object_prompt_system, user_prompt
+        gpt_text_response = gpt.ask(
+            [{"role": "user", "content": user_prompt}],
+            system_msgs=[{"role": "system", "content": prompts.step_1_big_object_prompt_system}],
+            temperature=0.0
         )
-        gpt_text_response = gpt(payload=prompt_payload, verbose=True)
         print(gpt_text_response)
 
         # gpt_text_response ='{\n    "Roomtype": "Living Room",\n    "Category list of big object": {\n        "sofa": 2,\n        "armchair": 2,\n        "coffee table": 1,\n        "TV stand": 1,\n        "large shelf": 1,\n        "side table": 2,\n        "floor lamp": 2\n    },\n    "Object against the wall": ["TV stand", "large shelf"],\n    "Relation between big objects": [\n        ["armchair", "coffee table", "front_against"],\n        ["sofa", "coffee table", "front_against"],\n        ["side table", "sofa", "side_by_side"],\n        ["floor lamp", "armchair", "side_by_side"]\n    ]\n}'
@@ -129,14 +130,15 @@ class InitGPTExecute(BaseTool):
             demand=user_demand,
             roomsize=roomsize_str,
         )
-        prompt_payload = gpt.get_payload(
-            prompts.step_5_position_prompt_system, user_prompt
-        )
         success = False
-        iter = 0
-        while not success and iter < 5:
-            iter += 1
-            gpt_text_response = gpt(payload=prompt_payload, verbose=True)
+        iter_count = 0
+        while not success and iter_count < 5:
+            iter_count += 1
+            gpt_text_response = gpt.ask(
+                [{"role": "user", "content": user_prompt}],
+                system_msgs=[{"role": "system", "content": prompts.step_5_position_prompt_system}],
+                temperature=0.0
+            )
             print(gpt_text_response)
 
             # gpt_text_response = '{\n    "Roomtype": "Bookstore",\n    "list of given category names": ["sofa", "armchair", "coffee table", "TV stand", "large shelf", "side table", "floor lamp", "remote control", "book", "magazine", "decorative bowl", "photo frame", "vase", "candle", "coaster", "plant"],\n    "Mapping results": {\n        "sofa": "seating.SofaFactory",\n        "armchair": "seating.ArmChairFactory",\n        "coffee table": "tables.CoffeeTableFactory",\n        "TV stand": "shelves.TVStandFactory",\n        "large shelf": "shelves.LargeShelfFactory",\n        "side table": "tables.SideTableFactory",\n        "floor lamp": "lamp.FloorLampFactory",\n        "remote control": null,\n        "book": "table_decorations.BookStackFactory",\n        "magazine": null,\n        "decorative bowl": "tableware.BowlFactory",\n        "photo frame": null,\n        "vase": "table_decorations.VaseFactory",\n        "candle": null,\n        "coaster": null,\n        "plant": "tableware.PlantContainerFactory"\n    }\n}'
@@ -160,10 +162,11 @@ class InitGPTExecute(BaseTool):
         user_prompt = prompts.step_3_class_name_prompt_user.format(
             category_list=s, demand=user_demand
         )
-        system_prompt = prompts.step_3_class_name_prompt_system
-
-        prompt_payload = gpt.get_payload(system_prompt, user_prompt)
-        gpt_text_response = gpt(payload=prompt_payload, verbose=True)
+        gpt_text_response = gpt.ask(
+            [{"role": "user", "content": user_prompt}],
+            system_msgs=[{"role": "system", "content": prompts.step_3_class_name_prompt_system}],
+            temperature=0.0
+        )
         print(gpt_text_response)
 
         gpt_dict_response = extract_json(
