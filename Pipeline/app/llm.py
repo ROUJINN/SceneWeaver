@@ -411,7 +411,8 @@ class LLM:
             # Make POST request to REST API
             url = f"{self.base_url}/models/{self.model}:generateContent?key={self.api_key}"
             headers = {"Content-Type": "application/json"}
-            response = requests.post(url, headers=headers, json=body, timeout=300)
+            # Use extended timeout (600s) for LLM calls to avoid timeout issues
+            response = requests.post(url, headers=headers, json=body, timeout=600)
 
             # Check for errors
             try:
@@ -659,7 +660,8 @@ class LLM:
             # Make POST request
             url = f"{self.base_url}/models/{self.model}:generateContent?key={self.api_key}"
             headers = {"Content-Type": "application/json"}
-            response = requests.post(url, headers=headers, json=body, timeout=300)
+            # Use extended timeout (600s) for LLM calls to avoid timeout issues
+            response = requests.post(url, headers=headers, json=body, timeout=600)
 
             # Check for errors
             try:

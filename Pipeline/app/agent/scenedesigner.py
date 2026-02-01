@@ -496,8 +496,6 @@ class SceneDesigner:
             os.system(f"cp {save_dir}/roominfo.json ../run/roominfo.json")
             self.current_step += 1
             memory_path = f"{save_dir}/pipeline/memory_{self.current_step}.pkl"
-        # if os.path.exists(f"{save_dir}/pipeline/memory_{self.current_step}.pkl"):
-        #     self.current_step += 1
 
         while self.current_step < self.max_steps and self.state != AgentState.FINISHED:
             if self.current_step > 0:
@@ -519,6 +517,7 @@ class SceneDesigner:
             else:
                 self.available_tools = self.available_tools2
 
+            breakpoint()
             logger.info(
                 f"Executing step {self.current_step}/{self.max_steps} for {save_dir}"
             )

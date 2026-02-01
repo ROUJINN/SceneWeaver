@@ -1,10 +1,9 @@
 import json
 import os
 
-from app.llm import LLM
-
 import app.prompt.gpt.add_crowd as prompts1
 import app.prompt.gpt.init_gpt as prompts0
+from app.llm import LLM
 from app.tool.init_gpt import InitGPTExecute
 from app.tool.update_infinigen import update_infinigen
 from app.utils import extract_json, lst2str
@@ -64,8 +63,8 @@ class AddCrowdExecute(InitGPTExecute):
 
         results = dict()
         save_dir = os.getenv("save_dir")
-        render_path = f"{save_dir}/record_scene/render_{iter-1}.jpg"
-        with open(f"{save_dir}/record_scene/layout_{iter-1}.json", "r") as f:
+        render_path = f"{save_dir}/record_scene/render_{iter - 1}.jpg"
+        with open(f"{save_dir}/record_scene/layout_{iter - 1}.json", "r") as f:
             layout = json.load(f)
 
         roomsize = layout["roomsize"]
@@ -83,15 +82,17 @@ class AddCrowdExecute(InitGPTExecute):
         gpt_text_response = gpt.ask_with_images(
             [{"role": "user", "content": step_1_big_object_prompt_user}],
             images=[render_path],
-            system_msgs=[{"role": "system", "content": prompts1.step_1_big_object_prompt_system}],
-            temperature=0.0
+            system_msgs=[
+                {"role": "system", "content": prompts1.step_1_big_object_prompt_system}
+            ],
+            temperature=1.0,
         )
         print(gpt_text_response)
 
         gpt_dict_response = extract_json(gpt_text_response)
         results = gpt_dict_response
 
-        #{
+        # {
         #     "User demand": "BookStore",
         #     "Roomsize": [3, 4],
         #     "Relation": "on",
@@ -109,8 +110,10 @@ class AddCrowdExecute(InitGPTExecute):
         )
         gpt_text_response = gpt.ask(
             [{"role": "user", "content": user_prompt}],
-            system_msgs=[{"role": "system", "content": prompts0.step_3_class_name_prompt_system}],
-            temperature=0.0
+            system_msgs=[
+                {"role": "system", "content": prompts0.step_3_class_name_prompt_system}
+            ],
+            temperature=1.0,
         )
         print(gpt_text_response)
 

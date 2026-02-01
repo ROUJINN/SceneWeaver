@@ -451,17 +451,10 @@ class Solver:
         with open(f"{save_dir}/objav_cnts.json", "w") as f:
             json.dump(self.LoadObjavCnts, f, indent=4)
 
-        # cmd = """
-        # source /home/yandan/anaconda3/etc/profile.d/conda.sh
-        # conda activate idesign
-        # python ~/workspace/SceneWeaver/infinigen/assets/objaverse_assets/retrieve_idesign.py > run.log 2>&1
-        # """
-        # subprocess.run(["bash", "-c", cmd])
-       
         os.system(
-            f'env -i bash --norc --noprofile -c "./run/retrieve.sh {save_dir}" > run.log 2>&1'
+            f'bash -lic "source ./run/retrieve_holodeck.sh {save_dir}" > run.log 2>&1'
         )
-        with open(f"{save_dir}/objav_files.json", "r") as f:
+        with open(f"{save_dir}/objav_files.json", mode="r") as f:
             self.LoadObjavFiles = json.load(f)
         return
 
@@ -680,7 +673,7 @@ class Solver:
     ):
         self.del_no_relation_objects()
 
-        #{
+        # {
         #     "User demand": "BookStore",
         #     "Roomsize": [3, 4],
         #     "Relation": "on",
@@ -703,14 +696,12 @@ class Solver:
         for k, v in info["name_mapping"].items():
             self.name_mapping[k.lower()] = v
 
-
-        for name,cnt in Placement.items():
+        for name, cnt in Placement.items():
             for i in range(int(cnt)):
                 category = name
                 module_and_class = self.name_mapping[name.lower()]
                 against_wall = False
                 on_floor = False
-                
 
                 filter_domain = self.calc_filter_domain(
                     category,
@@ -726,7 +717,9 @@ class Solver:
                     continue  # TODO, only support infinigen objects in this function right now, since no size info is provided for other assets.
 
                 module_name, class_name = module_and_class.rsplit(".", 1)
-                module = importlib.import_module("infinigen.assets.objects." + module_name)
+                module = importlib.import_module(
+                    "infinigen.assets.objects." + module_name
+                )
                 class_obj = getattr(module, class_name)
                 gen_class = class_obj
 
@@ -735,7 +728,9 @@ class Solver:
                 search_rels = filter_domain.relations
                 # 筛选出有效的关系，只选择非否定关系
                 search_rels = [
-                    rd for rd in search_rels if not isinstance(rd[0], cl.NegatedRelation)
+                    rd
+                    for rd in search_rels
+                    if not isinstance(rd[0], cl.NegatedRelation)
                 ]
 
                 assign = propose_relations.find_given_assignments(
@@ -907,7 +902,6 @@ class Solver:
             j = json.load(f)
         for key, value in j.items():
             layouts[key] = value
-
 
         for name, info in layouts.items():
             if name not in self.state.objs:
@@ -1611,8 +1605,6 @@ class Solver:
         PATH_TO_SCENES = os.getenv("JSON_RESULTS")
         with open(PATH_TO_SCENES, "r") as f:
             scene_info = json.load(f)
-
-
 
         supporter = scene_info["supporter"]
 

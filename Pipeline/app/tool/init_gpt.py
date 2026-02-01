@@ -1,9 +1,8 @@
 import json
 import os
 
-from app.llm import LLM
-
 import app.prompt.gpt.init_gpt as prompts
+from app.llm import LLM
 from app.tool.base import BaseTool
 from app.tool.update_infinigen import update_infinigen
 from app.utils import dict2str, extract_json, lst2str
@@ -70,9 +69,7 @@ class InitGPTExecute(BaseTool):
                     "save_dir": os.getenv("save_dir"),
                 }
                 json.dump(info, f, indent=4)
-            os.system(
-                f"cp  {save_dir}/roominfo.json ../run/roominfo.json"
-            )
+            os.system(f"cp  {save_dir}/roominfo.json ../run/roominfo.json")
             success = update_infinigen(action, iter, json_name, ideas=ideas)
             assert success
 
@@ -98,8 +95,10 @@ class InitGPTExecute(BaseTool):
         )
         gpt_text_response = gpt.ask(
             [{"role": "user", "content": user_prompt}],
-            system_msgs=[{"role": "system", "content": prompts.step_1_big_object_prompt_system}],
-            temperature=0.0
+            system_msgs=[
+                {"role": "system", "content": prompts.step_1_big_object_prompt_system}
+            ],
+            temperature=1.0,
         )
         print(gpt_text_response)
 
@@ -136,8 +135,10 @@ class InitGPTExecute(BaseTool):
             iter_count += 1
             gpt_text_response = gpt.ask(
                 [{"role": "user", "content": user_prompt}],
-                system_msgs=[{"role": "system", "content": prompts.step_5_position_prompt_system}],
-                temperature=0.0
+                system_msgs=[
+                    {"role": "system", "content": prompts.step_5_position_prompt_system}
+                ],
+                temperature=1.0,
             )
             print(gpt_text_response)
 
@@ -164,8 +165,10 @@ class InitGPTExecute(BaseTool):
         )
         gpt_text_response = gpt.ask(
             [{"role": "user", "content": user_prompt}],
-            system_msgs=[{"role": "system", "content": prompts.step_3_class_name_prompt_system}],
-            temperature=0.0
+            system_msgs=[
+                {"role": "system", "content": prompts.step_3_class_name_prompt_system}
+            ],
+            temperature=1.0,
         )
         print(gpt_text_response)
 

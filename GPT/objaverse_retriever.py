@@ -10,6 +10,7 @@ from .constants import (
     HOLODECK_THOR_ANNOTATIONS_PATH,
     HOLODECK_THOR_FEATURES_DIR,
     OBJATHOR_ANNOTATIONS_PATH,
+    OBJATHOR_ASSETS_DIR,
     OBJATHOR_FEATURES_DIR,
 )
 from .utils import get_bbox_dims
@@ -60,16 +61,43 @@ class ObjathorRetriever:
             np.float32
         )
 
-        self.clip_features = torch.from_numpy(
-            np.concatenate([objathor_clip_features, thor_clip_features], axis=0)
+        # Filter out missing asset files
+        print("[INFO] 检查资产文件可用性...")
+        all_uids = objathor_uids + thor_uids
+        all_clip_features = np.concatenate(
+            [objathor_clip_features, thor_clip_features], axis=0
         )
+        all_sbert_features = np.concatenate(
+            [objathor_sbert_features, thor_sbert_features], axis=0
+        )
+
+        valid_indices = []
+        missing_count = 0
+        for idx, uid in enumerate(all_uids):
+            # THOR assets don't need file checking
+            if uid in thor_uids:
+                valid_indices.append(idx)
+            else:
+                # Check if Objaverse asset file exists
+                asset_path = os.path.join(OBJATHOR_ASSETS_DIR, uid, f"{uid}.pkl.gz")
+                if os.path.exists(asset_path):
+                    valid_indices.append(idx)
+                else:
+                    missing_count += 1
+
+        if missing_count > 0:
+            print(f"[INFO] 过滤掉 {missing_count} 个缺失的资产文件")
+            print(f"[INFO] 可用资产: {len(valid_indices)}/{len(all_uids)}")
+
+        # Only keep valid assets
+        self.asset_ids = [all_uids[i] for i in valid_indices]
+        valid_clip_features = all_clip_features[valid_indices]
+        valid_sbert_features = all_sbert_features[valid_indices]
+
+        self.clip_features = torch.from_numpy(valid_clip_features)
         self.clip_features = F.normalize(self.clip_features, p=2, dim=-1).cuda()
 
-        self.sbert_features = torch.from_numpy(
-            np.concatenate([objathor_sbert_features, thor_sbert_features], axis=0)
-        ).cuda()
-
-        self.asset_ids = objathor_uids + thor_uids
+        self.sbert_features = torch.from_numpy(valid_sbert_features).cuda()
 
         self.clip_model = clip_model
         self.clip_preprocess = clip_preprocess

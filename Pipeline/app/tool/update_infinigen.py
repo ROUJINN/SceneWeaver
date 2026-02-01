@@ -55,24 +55,20 @@ def update_infinigen(
     argsfile = f"{save_dir}/args.json"
     with open(argsfile, "w") as f:
         json.dump(j, f, indent=4)
-    os.system(
-        f"cp {save_dir}/roominfo.json ../run/roominfo.json"
-    )
+    os.system(f"cp {save_dir}/roominfo.json ../run/roominfo.json")
 
     # # if invisible:
     sw_dir = os.getenv("sceneweaver_dir")
     socket = os.getenv("socket")
-    if action == "export_supporter" or socket=="False":
+    if action == "export_supporter" or socket == "False":
         # if True:
         cmd = f"""
-        source ~/anaconda3/etc/profile.d/conda.sh
-        conda activate infinigen
+        lg infinigen
         cd {sw_dir}
         python -m infinigen_examples.generate_indoors --seed 0 --save_dir {save_dir} --task coarse --output_folder outputs/indoors/coarse_expand_whole_nobedframe -g fast_solve.gin overhead.gin studio.gin -p compose_indoors.terrain_enabled=False compose_indoors.invisible_room_ceilings_enabled=True > {sw_dir}run.log 2>&1
         """
-        subprocess.run(["bash", "-c", cmd])
-        # else:
-        #     os.system("bash -i ~/workspace/SceneWeaver/run.sh > run.log 2>&1")
+        breakpoint()
+        subprocess.run(["bash", "-lic", cmd])
     else:
         command = {
             "action": action,

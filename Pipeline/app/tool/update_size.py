@@ -2,7 +2,6 @@ import json
 import os
 
 from app.llm import LLM
-
 from app.prompt.gpt.update_size import system_prompt, user_prompt
 from app.tool.base import BaseTool
 from app.tool.update_infinigen import update_infinigen
@@ -53,8 +52,8 @@ class UpdateSizeExecute(BaseTool):
 
     def update_scene_gpt(self, user_demand, ideas, iter, roomtype):
         save_dir = os.getenv("save_dir")
-        render_path = f"{save_dir}/record_scene/render_{iter-1}.jpg"
-        with open(f"{save_dir}/record_scene/layout_{iter-1}.json", "r") as f:
+        render_path = f"{save_dir}/record_scene/render_{iter - 1}.jpg"
+        with open(f"{save_dir}/record_scene/layout_{iter - 1}.json", "r") as f:
             layout = json.load(f)
 
         roomsize = layout["roomsize"]
@@ -79,7 +78,7 @@ class UpdateSizeExecute(BaseTool):
             [{"role": "user", "content": user_prompt_1}],
             images=[render_path],
             system_msgs=[{"role": "system", "content": system_prompt_1}],
-            temperature=0.0
+            temperature=1.0,
         )
         print(gpt_text_response)
 

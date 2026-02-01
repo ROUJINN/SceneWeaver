@@ -31,39 +31,12 @@ python main.py --prompt "Design me a bedroom." --cnt 1 --basedir PATH/TO/SAVE
 
 The core is the **SceneDesigner** agent (`app/agent/scenedesigner.py`) which:
 
-1. **Maintains tool collections** organized by phase:
-   - `available_tools0`: Initializers (InitGPTExecute, InitMetaSceneExecute, InitPhySceneExecute)
-   - `available_tools1`: Implementers (AddAcdcExecute, AddGPTExecute, AddCrowdExecute, AddRelationExecute, UpdateLayoutExecute, UpdateRotationExecute, UpdateSizeExecute, RemoveExecute)
-   - `available_tools2`: Termination (Terminate)
-
 2. **Uses LLM-based planning**: Each step, the agent observes the current scene state, uses the LLM to decide which tool to call, and executes it
 
 3. **Self-reflective loop**: After each tool execution, the scene is evaluated (physics + GPT-based grading) to determine if improvements are needed
 
 4. **Tool execution flow**:
    - Agent selects tool → Tool executes → Scene updated in Blender → Scene evaluated → Memory updated → Next iteration
-
-### Tool Categories
-
-- **Initializer Tools**: Set up initial room layout using GPT generation, MetaScenes dataset, or PhyScene/DiffuScene/ATISS models
-- **Implementer Tools**: Add objects to the scene using various methods:
-  - `AddAcdcExecute`: Visual generation using Stable Diffusion + Tabletop Digital Cousin
-  - `AddGPTExecute`: LLM-based sparse or crowded object placement
-  - `AddCrowdExecute`: Rule-based dense object placement
-  - `AddRelationExecute`: Add object relationships
-- **Modifier Tools**: Update layout, rotation, size, or remove objects
-- **Termination Tool`: Marks scene as complete
-
-### Asset Sources
-
-Different tools use different asset sources:
-
-| Tool/Stage | Asset Source |
-|------------|--------------|
-| MetaScenes initializer | MetaScenes dataset (with meshes and layout) |
-| PhyScene/DiffuScene/ATISS initializer | 3D FUTURE dataset |
-| Most other tools | Infinigen procedural generation |
-| Specialized categories (clock, laptop, etc.) | Objaverse via OpenShape or Holodeck pipelines |
 
 ### Evaluation System
 

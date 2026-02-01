@@ -82,7 +82,7 @@ class GPT4(GPT4o):
                 {"role": "system", "content": content_system},
                 {"role": "user", "content": content_user},
             ],
-            "temperature": 0,
+            "temperature": 1,
             "max_tokens": 4096,
         }
         return object_caption_payload
@@ -120,7 +120,7 @@ class GPT4(GPT4o):
                 {"role": "system", "content": content_system},
                 {"role": "user", "content": content_user},
             ],
-            "temperature": 0,
+            "temperature": 1,
             "max_tokens": 4096,
         }
         return object_caption_payload
@@ -182,7 +182,7 @@ class GPT4(GPT4o):
                 {"role": "system", "content": content_system},
                 {"role": "user", "content": content},
             ],
-            "temperature": 0,
+            "temperature": 1,
             "max_tokens": 50,
         }
         return NN_payload
@@ -235,7 +235,7 @@ class GPT4(GPT4o):
                 {"role": "system", "content": content_system},
                 {"role": "user", "content": content},
             ],
-            "temperature": 0,
+            "temperature": 1,
             "max_tokens": 50,
         }
         return NN_payload
@@ -276,7 +276,7 @@ class GPT4(GPT4o):
                 {"role": "system", "content": content_system},
                 {"role": "user", "content": content},
             ],
-            "temperature": 0,
+            "temperature": 1,
             "max_tokens": 1000,
         }
         return NN_payload

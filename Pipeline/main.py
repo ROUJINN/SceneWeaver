@@ -8,15 +8,18 @@ def main(prompt, i, basedir):
     agent = SceneDesigner()
     try:
         # prompt = "Design me a bedroom."
-        save_dir = basedir + prompt[
-            :30
-        ].replace(" ", "_").replace(".", "").replace(",", "_").replace("[", "").replace(
-            "]", ""
+        save_dir = os.path.join(
+            basedir,
+            prompt[:30]
+            .replace(" ", "_")
+            .replace(".", "")
+            .replace(",", "_")
+            .replace("[", "")
+            .replace("]", ""),
         )
         save_dir = save_dir + "_" + str(i)
         if not os.path.exists(save_dir):
             os.system(f"mkdir {save_dir}")
-            
 
         os.makedirs(f"{save_dir}/pipeline", exist_ok=True)
         os.makedirs(f"{save_dir}/args", exist_ok=True)
@@ -37,15 +40,27 @@ def main(prompt, i, basedir):
 
 if __name__ == "__main__":
     import argparse
-    parser = argparse.ArgumentParser(description='Process some integers.')
 
-    parser.add_argument('--prompt', type=str,  default="Design me a bedroom.",
-                       help='Your prompt to generate the scene. Default is "Design me a bedroom."')
-    parser.add_argument('--cnt', type=int, default=1,
-                   help='Number of scene to generate. Default is 1')
-    parser.add_argument('--basedir', type=str, default="/mnt/fillipo/yandan/scenesage/record_scene/manus/",
-                   help='The basic path to save all the generated scenes.')
-    parser.add_argument('--socket', type=str, default="False", help='Run with Blender in the foreground')
+    parser = argparse.ArgumentParser(description="Process some integers.")
+
+    parser.add_argument(
+        "--prompt",
+        type=str,
+        default="Design me a bedroom.",
+        help='Your prompt to generate the scene. Default is "Design me a bedroom."',
+    )
+    parser.add_argument(
+        "--cnt", type=int, default=1, help="Number of scene to generate. Default is 1"
+    )
+    parser.add_argument(
+        "--basedir",
+        type=str,
+        default="/mnt/fillipo/yandan/scenesage/record_scene/manus/",
+        help="The basic path to save all the generated scenes.",
+    )
+    parser.add_argument(
+        "--socket", type=str, default="False", help="Run with Blender in the foreground"
+    )
 
     args = parser.parse_args()
     prompts = [args.prompt]
@@ -54,6 +69,7 @@ if __name__ == "__main__":
     os.environ["socket"] = args.socket
 
     import os
+
     current_file_path = os.path.abspath(__file__)
     current_dir = os.path.dirname(current_file_path)
     parent_dir = os.path.dirname(current_dir)
@@ -65,4 +81,3 @@ if __name__ == "__main__":
         for i in range(cnt):
             prompt = p
             main(prompt, i, basedir)
-            

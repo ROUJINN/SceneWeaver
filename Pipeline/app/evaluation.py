@@ -4,8 +4,8 @@ import re
 import time
 
 import numpy as np
-from app.llm import LLM
 
+from app.llm import LLM
 from app.utils import dict2str
 
 
@@ -20,7 +20,7 @@ def diff_objects(iter):
     if iter == 0:
         return {"newly added objects": list(objs_now), "removed objects": []}
 
-    with open(f"{save_dir}/record_scene/layout_{iter-1}.json", "r") as f:
+    with open(f"{save_dir}/record_scene/layout_{iter - 1}.json", "r") as f:
         layout = json.load(f)
         layout = layout["objects"]
         objs_past = layout.keys()
@@ -74,7 +74,7 @@ def eval_scene(iter, user_demand):
         with open(f"{save_dir}/record_files/metric_{iter}.json", "r") as f:
             results = json.load(f)
     else:
-        results = {"OOB Objects":0,"BBL objects":0,"Nobj":"Unknown"}
+        results = {"OOB Objects": 0, "BBL objects": 0, "Nobj": "Unknown"}
 
     metric = dict()
     metric["Object Difference"] = obj_diff
@@ -202,7 +202,7 @@ You are working in a 3D scene environment with the following conventions:
     gpt_text_response = gpt.ask_with_images(
         [{"role": "user", "content": prompting_text_user}],
         images=[image_path_1],
-        temperature=0.0
+        temperature=1.0,
     )
 
     grades = {"realism": [], "functionality": [], "layout": [], "completion": []}

@@ -6,7 +6,7 @@ ASSETS_VERSION = os.environ.get("ASSETS_VERSION", "2023_09_23")
 HD_BASE_VERSION = os.environ.get("HD_BASE_VERSION", "2023_09_23")
 
 OBJATHOR_ASSETS_BASE_DIR = os.environ.get(
-    "OBJATHOR_ASSETS_BASE_DIR", os.path.join(ABS_PATH_OF_HOLODECK, "data")
+    "OBJATHOR_ASSETS_BASE_DIR", "/home/lj/.objathor-assets/"
 )
 
 OBJATHOR_VERSIONED_DIR = os.path.join(OBJATHOR_ASSETS_BASE_DIR, ASSETS_VERSION)
