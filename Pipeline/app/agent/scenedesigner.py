@@ -21,8 +21,8 @@ from app.schema import (
     ToolChoice,
 )
 from app.tool.add_acdc import AddAcdcExecute
-from app.tool.add_gpt import AddGPTExecute
 from app.tool.add_crowd import AddCrowdExecute
+from app.tool.add_gpt import AddGPTExecute
 from app.tool.add_relation import AddRelationExecute
 from app.tool.init_gpt import InitGPTExecute
 from app.tool.init_metascene import InitMetaSceneExecute
@@ -103,7 +103,7 @@ class SceneDesigner:
                 isvalid = self.check_valid(self.current_step - 1)
             except:
                 print(
-                    f"Error: Failed in evaluation in iter {self.current_step-1} !!! Go back to the last iter."
+                    f"Error: Failed in evaluation in iter {self.current_step - 1} !!! Go back to the last iter."
                 )
                 isvalid = False
             if not isvalid:
@@ -190,7 +190,7 @@ class SceneDesigner:
             else:
                 return False
         else:
-            json_name = f"{save_dir}/pipeline/metric_{iter-1}.json"
+            json_name = f"{save_dir}/pipeline/metric_{iter - 1}.json"
             with open(json_name, "r") as f:
                 grades_old = json.load(f)
                 score_old = [
@@ -228,9 +228,11 @@ class SceneDesigner:
 
     def load_sceneinfo(self):
         save_dir = os.getenv("save_dir")
-        image_path = f"{save_dir}/record_scene/render_{self.current_step-1}_marked.jpg"
+        image_path = (
+            f"{save_dir}/record_scene/render_{self.current_step - 1}_marked.jpg"
+        )
         with open(
-            f"{save_dir}/record_scene/layout_{self.current_step-1}.json", "r"
+            f"{save_dir}/record_scene/layout_{self.current_step - 1}.json", "r"
         ) as f:
             layout = json.load(f)
         roomsize = layout["roomsize"]
@@ -497,9 +499,7 @@ class SceneDesigner:
         save_dir = os.getenv("save_dir")
         memory_path = f"{save_dir}/pipeline/memory_{self.current_step}.pkl"
         while os.path.exists(memory_path):
-            os.system(
-                f"cp {save_dir}/roominfo.json ../run/roominfo.json"
-            )
+            os.system(f"cp {save_dir}/roominfo.json ../run/roominfo.json")
             self.current_step += 1
             memory_path = f"{save_dir}/pipeline/memory_{self.current_step}.pkl"
         # if os.path.exists(f"{save_dir}/pipeline/memory_{self.current_step}.pkl"):
@@ -508,7 +508,7 @@ class SceneDesigner:
         while self.current_step < self.max_steps and self.state != AgentState.FINISHED:
             if self.current_step > 0:
                 with open(
-                    f"{save_dir}/pipeline/memory_{self.current_step-1}.pkl", "rb"
+                    f"{save_dir}/pipeline/memory_{self.current_step - 1}.pkl", "rb"
                 ) as file:
                     self.memory = dill.load(file)
 

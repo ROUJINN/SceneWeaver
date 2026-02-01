@@ -57,6 +57,7 @@ dependencies:
       - future==1.0.0
       - gitdb==4.0.11
       - gitpython==3.1.43
+      - google-genai==0.8.3
       - google-auth==2.34.0
       - google-auth-oauthlib==1.0.0
       - grpcio==1.66.1
@@ -143,7 +144,7 @@ dependencies:
       - timm==1.0.11
       - tokenizers==0.20.2
       - toml==0.10.2
-      - tornado==6.4.1
+      - tornado==6.4.1 # 这里官方pypi已经要求python>=3.9了，但实际上这个版本还是能装的
       - tqdm==4.66.5
       - transformers==4.46.1
       - typeguard==4.3.0
@@ -158,4 +159,3 @@ dependencies:
       - yacs==0.1.8
       - yarl==1.11.1
       - zipp==3.20.1
-prefix: /home/yandan/anaconda3/envs/sceneweaver

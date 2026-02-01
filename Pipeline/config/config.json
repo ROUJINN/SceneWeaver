@@ -2,13 +2,10 @@
 
 {
     "llm":{
-        "api_type": "azure",
-        "model" : "gpt-4.1-2025-04-14",
-        "base_url": "{YOUR_AZURE_ENDPOINT.rstrip('/')}/openai/deployments/{AZURE_DEPOLYMENT_ID}",
+        "model" : "gemini-3-flash-preview",
+        "base_url": "https://api.zhizengzeng.com/google/v1beta",
         "api_key" : "key.txt",
-        "max_tokens": 8096,
-        "temperature": 0.3,
-        "api_version":"2025-03-01-preview"
+        "max_tokens": 8192,
+        "temperature": 1
     }
 }
-

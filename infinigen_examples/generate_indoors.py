@@ -13,6 +13,10 @@ logging.basicConfig(
     datefmt="%H:%M:%S",
     level=logging.INFO,
 )
+# Copyright (C) 2023, Princeton University.
+# This source code is licensed under the BSD 3-Clause license found in the LICENSE file in the root directory
+# of this source tree.
+import logging
 import os
 import sys
 
@@ -41,13 +45,6 @@ from infinigen_examples.util.generate_indoors_util import (
 from infinigen_examples.util.visible import (
     invisible_wall,
 )
-# Copyright (C) 2023, Princeton University.
-# This source code is licensed under the BSD 3-Clause license found in the LICENSE file in the root directory
-# of this source tree.
-
-import argparse
-import logging
-from pathlib import Path
 
 # ruff: noqa: E402
 # NOTE: logging config has to be before imports that use logging
@@ -57,18 +54,12 @@ logging.basicConfig(
     level=logging.INFO,
 )
 import json
-import os
 import socket
-import sys
 import threading
 import time
 
-import bpy
-import gin
 import numpy as np
 
-from infinigen.core import execute_tasks, init
-from infinigen.core.constraints import checks
 from infinigen.core.constraints.constraint_language.util import delete_obj_with_children
 from infinigen.core.constraints.example_solver import (
     populate,
@@ -76,31 +67,16 @@ from infinigen.core.constraints.example_solver import (
 from infinigen.core.constraints.example_solver.geometry.validity import (
     all_relations_valid,
 )
-from infinigen.core.constraints.example_solver.room import constants
-from infinigen.core.util import pipeline
-from infinigen_examples.indoor_constraint_examples import home_constraints
 from infinigen_examples.steps import (
-    basic_scene,
-    camera,
-    complete_structure,
     evaluate,
-    init_graph,
-    light,
-    record,
-    room_structure,
     solve_objects,
-    update_graph,
-)
-from infinigen_examples.util import constraint_util as cu
-from infinigen_examples.util.generate_indoors_util import (
-    restrict_solving,
 )
 from infinigen_examples.util.visible import (
     invisible_others,
-    invisible_wall,
     visible_layers,
     visible_others,
 )
+
 logger = logging.getLogger(__name__)
 
 all_vars = [cu.variable_room, cu.variable_obj]

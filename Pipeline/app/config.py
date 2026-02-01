@@ -25,8 +25,6 @@ class LLMSettings(BaseModel):
         description="Maximum input tokens to use across all requests (None for unlimited)",
     )
     temperature: float = Field(1.0, description="Sampling temperature")
-    api_type: str = Field(..., description="Azure, Openai, or Ollama")
-    api_version: str = Field(..., description="Azure Openai version if AzureOpenai")
 
 
 class ProxySettings(BaseModel):
@@ -91,25 +89,31 @@ class Config:
             return json.load(f)
 
     def _load_initial_config(self):
+        import os
+
         raw_config = self._load_config()
         base_llm = raw_config.get("llm", {})
         llm_overrides = {
             k: v for k, v in raw_config.get("llm", {}).items() if isinstance(v, dict)
         }
 
-        with open(base_llm.get("api_key"), "r") as f:
-            lines = f.readlines()
-        API_KEY = lines[0].strip()
+        # Load API key from environment variable (GOOGLE_API_KEY)
+        # If not set, fall back to reading from key.txt for backward compatibility
+        API_KEY = os.getenv("GOOGLE_API_KEY")
+        if API_KEY is None:
+            key_file = base_llm.get("api_key")
+            if key_file and key_file.endswith("key.txt"):
+                with open(key_file, "r") as f:
+                    lines = f.readlines()
+                API_KEY = lines[0].strip()
 
         default_settings = {
-            "model": base_llm.get("model"),
-            "base_url": base_llm.get("base_url"),
+            "model": base_llm.get("model", "gemini-3-flash-preview"),
+            "base_url": base_llm.get("base_url", "https://api.zhizengzeng.com/google/v1beta"),
             "api_key": API_KEY,
-            "max_tokens": base_llm.get("max_tokens", 4096),
+            "max_tokens": base_llm.get("max_tokens", 8192),
             "max_input_tokens": base_llm.get("max_input_tokens"),
             "temperature": base_llm.get("temperature", 1.0),
-            "api_type": base_llm.get("api_type", ""),
-            "api_version": base_llm.get("api_version", ""),
         }
 
         config_dict = {
