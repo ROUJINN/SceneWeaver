@@ -14,87 +14,14 @@ SceneWeaver is an "All-in-One 3D Scene Synthesis with an Extensible and Self-Ref
 - Multiple asset sources: MetaScenes, 3D FUTURE, Infinigen-generated assets, Objaverse
 - A tool-based architecture for scene initialization, implementation, and modification
 
-## Environment Setup
-
-SceneWeaver requires **two separate conda environments**:
-
-### 1. SceneWeaver Planner Environment (`sceneweaver`)
-```bash
-conda env create --prefix /path/to/anaconda3/envs/sceneweaver -f environment_sceneweaver.yml
-conda activate sceneweaver
-```
-
-This environment contains Python 3.8 with OpenAI/transformers dependencies for the agent.
-
-### 2. Infinigen Executor Environment (`infinigen`)
-```bash
-conda create --name infinigen python=3.10.14
-conda activate infinigen
-# Install required packages (see env.sh for full list)
-pip install bpy==3.6.0 --extra-index-url https://download.blender.org/pypi/
-pip install gin-config trimesh scipy scikit-learn python-fcl Rtree shapely ...
-```
-
-Then run the Infinigen installer:
-```bash
-# Minimal installation (recommended)
-INFINIGEN_MINIMAL_INSTALL=True bash scripts/install/interactive_blender.sh
-
-# Normal installation
-bash scripts/install/interactive_blender.sh
-
-# With OpenGL ground truth
-INFINIGEN_INSTALL_CUSTOMGT=True bash scripts/install/interactive_blender.sh
-```
-
-## Configuration
-
-Before running, set up your LLM API key:
-
-1. **API Key**: Save your Azure/OpenAI API key in `Pipeline/key.txt` (first line)
-2. **Config**: Edit `Pipeline/config/config.json` with your Azure endpoint, model, and deployment details:
-   ```json
-   {
-     "llm": {
-       "api_type": "azure",
-       "model": "gpt-4.1-2025-04-14",
-       "base_url": "{YOUR_AZURE_ENDPOINT.rstrip('/')}/openai/deployments/{AZURE_DEPLOYMENT_ID}",
-       "api_key": "key.txt",
-       "max_tokens": 8096,
-       "temperature": 0.3,
-       "api_version": "2025-03-01-preview"
-     }
-   }
-   ```
 
 ## Running the System
 
-### Mode 1: Background Blender (Recommended)
+### Background Blender (Recommended)
 ```bash
 cd Pipeline
-conda activate sceneweaver
+lg sceneweaver
 python main.py --prompt "Design me a bedroom." --cnt 1 --basedir PATH/TO/SAVE
-```
-
-### Mode 2: Foreground Blender (Interactive)
-Requires two terminals:
-
-**Terminal 1** (Infinigen):
-```bash
-cd SceneWeaver
-conda activate infinigen
-python -m infinigen.launch_blender -m infinigen_examples.generate_indoors_vis \
-  --save_dir debug/ -- \
-  --seed 0 --task coarse --output_folder debug/ \
-  -g fast_solve.gin overhead.gin studio.gin \
-  -p compose_indoors.terrain_enabled=False
-```
-
-**Terminal 2** (SceneWeaver):
-```bash
-cd SceneWeaver/Pipeline
-conda activate sceneweaver
-python main.py --prompt "Design me a bedroom." --cnt 1 --basedir PATH/TO/SAVE --socket
 ```
 
 ## Architecture
@@ -179,10 +106,3 @@ PATH/TO/SAVE/Scene_Name/
 2. Implement `execute()` method with appropriate Blender/Infinigen calls
 3. Add to tool collection in `scenedesigner.py`
 4. Update tool descriptions/prompts as needed
-
-## Export to USD (for Isaac Sim)
-
-```bash
-python -m infinigen.tools.export --input_folder BLENDER_FILE_FOLDER \
-  --output_folder USD_SAVE_FOLDER -f usdc -r 1024 --omniverse
-```

@@ -20,13 +20,10 @@ from app.schema import (
     ToolCall,
     ToolChoice,
 )
-from app.tool.add_acdc import AddAcdcExecute
 from app.tool.add_crowd import AddCrowdExecute
 from app.tool.add_gpt import AddGPTExecute
 from app.tool.add_relation import AddRelationExecute
 from app.tool.init_gpt import InitGPTExecute
-from app.tool.init_metascene import InitMetaSceneExecute
-from app.tool.init_physcene import InitPhySceneExecute
 from app.tool.remove_obj import RemoveExecute
 from app.tool.terminate import Terminate
 from app.tool.tool_collection import ToolCollection
@@ -63,11 +60,8 @@ class SceneDesigner:
     duplicate_threshold: int = 2
 
     # Add general-purpose tools to the tool collection
-    available_tools0 = ToolCollection(
-        InitGPTExecute(), InitMetaSceneExecute(), InitPhySceneExecute()
-    )
+    available_tools0 = ToolCollection(InitGPTExecute())
     available_tools1 = ToolCollection(
-        AddAcdcExecute(),
         AddGPTExecute(),
         AddCrowdExecute(),
         AddRelationExecute(),
@@ -522,11 +516,6 @@ class SceneDesigner:
                 self.available_tools = self.available_tools0
             elif self.current_step < self.max_steps - 1:
                 self.available_tools = self.available_tools1
-                if (
-                    hasattr(self, "tool_calls")
-                    and self.tool_calls[0].function.name == "add_acdc"
-                ):  # modify size after using acdc
-                    self.available_tools = ToolCollection(UpdateSizeExecute())
             else:
                 self.available_tools = self.available_tools2
 
