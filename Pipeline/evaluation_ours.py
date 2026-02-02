@@ -19,7 +19,7 @@ def diff_objects(iter):
     if iter == 0:
         return {"newly added objects": list(objs_now), "removed objects": []}
 
-    with open(f"{save_dir}/record_scene/layout_{iter-1}.json", "r") as f:
+    with open(f"{save_dir}/record_scene/layout_{iter - 1}.json", "r") as f:
         layout = json.load(f)
         layout = layout["objects"]
         objs_past = layout.keys()

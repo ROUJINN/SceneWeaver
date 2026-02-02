@@ -414,6 +414,7 @@ class LLM:
                 "temperature": temperature
                 if temperature is not None
                 else self.temperature,
+                "thinkingLevel": "low",
             }
 
             # Make POST request to REST API
