@@ -21,8 +21,7 @@ SceneWeaver is an "All-in-One 3D Scene Synthesis with an Extensible and Self-Ref
 ### Background Blender (Recommended)
 ```bash
 cd Pipeline
-lg sceneweaver
-python main.py --prompt "Design me a bedroom." --cnt 1 --basedir PATH/TO/SAVE
+source run.sh
 ```
 
 ## Architecture

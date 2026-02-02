@@ -46,32 +46,34 @@ class ObjaverseCategoryFactory(ObjaverseFactory):
         self.z_dim = self._z_dim
 
     def create_asset(self, **params) -> bpy.types.Object:
-        if (self.asset_file is not None) and (
-            not self.asset_file.endswith(".glb")
-        ):  # from holodeck
-            basedir = OBJATHOR_ASSETS_DIR
-            filename = f"{basedir}/{self.asset_file}/{self.asset_file}.pkl.gz"
+        # Determine the file path and type
+        if self.asset_file is not None:
+            filename = self.asset_file
+        else:
+            save_dir = os.getenv("save_dir")
+            with open(f"{save_dir}/objav_files.json", "r") as f:
+                LoadObjavFiles = json.load(f)
+            filename = LoadObjavFiles[self.category][0]
+
+        # Branch based on file type
+        if filename.endswith(".pkl.gz"):
+            # Holodeck path - load pickle file directly
             imported_obj = load_pickled_3d_asset(filename)
-        else:  # from openshape
-            if self.asset_file is not None:
-                filename = self.asset_file
-                front_view_angle = 0
-            else:
-                save_dir = os.getenv("save_dir")
-                with open(f"{save_dir}/objav_files.json", "r") as f:
-                    LoadObjavFiles = json.load(f)
-                filename = LoadObjavFiles[self.category][0]
+        else:
+            # Openshape path - load GLB file with rotation
+            if self.asset_file is None:
                 with open(filename.replace(".glb", "") + "/metadata.json", "r") as f:
                     value = json.load(f)["front_view"]
                     front_view_angle = value.split("/")[-1].split(".")[0].split("_")[-1]
                     angle_bias = value.split("/")[-1].split(".")[0].split("_")[1]
                     front_view_angle = int(front_view_angle) + int(angle_bias)
+            else:
+                front_view_angle = 0
+
             bpy.ops.import_scene.gltf(filepath=filename)
 
-            # preprocess directary
+            # GLB-specific preprocessing
             parent_obj = bpy.context.selected_objects[0]
-            # parents = get_highest_parent_objects()
-
             bpy.ops.object.select_all(action="DESELECT")
             select_meshes_under_empty(parent_obj.name)
 
@@ -91,12 +93,8 @@ class ObjaverseCategoryFactory(ObjaverseFactory):
                 bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
                 joined_object.rotation_mode = "XYZ"
                 radians = math.radians(front_view_angle + 90)
-                joined_object.rotation_euler[2] = (
-                    radians  # Rotate around Z-a to face front
-                )
-                bpy.ops.object.transform_apply(
-                    location=False, rotation=True, scale=False
-                )
+                joined_object.rotation_euler[2] = radians
+                bpy.ops.object.transform_apply(location=False, rotation=True, scale=False)
                 bpy.ops.object.origin_set(type="ORIGIN_GEOMETRY", center="BOUNDS")
 
             bpy.ops.object.select_all(action="DESELECT")
