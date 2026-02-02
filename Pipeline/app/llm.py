@@ -1,5 +1,6 @@
 import json
 import os
+from datetime import datetime
 from typing import Dict, List, Optional, Union
 
 import requests
@@ -11,16 +12,74 @@ from tenacity import (
 )
 
 from app.config import LLMSettings, config
-from app.exceptions import TokenLimitExceeded
 from app.logger import logger  # Assuming a logger is set up in your app
+
+
+def log_llm_io(
+    save_dir: str,
+    messages: List[dict],
+    response: str,
+    system_msgs: Optional[List[dict]] = None,
+    tool_calls: Optional[List] = None,
+    method_name: str = "ask",
+):
+    """
+    Log LLM input and output to a file.
+
+    Args:
+        save_dir: Directory to save the log file
+        messages: Input messages sent to LLM
+        response: Response from LLM
+        system_msgs: Optional system messages
+        tool_calls: Optional tool calls in response
+        method_name: Name of the method used (ask, ask_tool, ask_with_images)
+    """
+    try:
+        log_dir = os.path.join(save_dir, "llm_io_logs")
+        os.makedirs(log_dir, exist_ok=True)
+
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+        log_file = os.path.join(log_dir, f"llm_{timestamp}.json")
+
+        log_data = {
+            "timestamp": datetime.now().isoformat(),
+            "method": method_name,
+            "input": {
+                "messages": messages,
+                "system_messages": system_msgs if system_msgs else [],
+            },
+            "output": {
+                "content": response,
+                "tool_calls": [
+                    {
+                        "id": tc.id,
+                        "type": tc.type,
+                        "function": {
+                            "name": tc.function.name,
+                            "arguments": tc.function.arguments,
+                        },
+                    }
+                    for tc in (tool_calls or [])
+                ],
+            },
+        }
+
+        with open(log_file, "w", encoding="utf-8") as f:
+            json.dump(log_data, f, indent=2, ensure_ascii=False)
+
+        logger.info(f"LLM I/O logged to: {log_file}")
+    except Exception as e:
+        logger.warning(f"Failed to log LLM I/O: {e}")
+
+
 from app.schema import (
     ROLE_VALUES,
     TOOL_CHOICE_TYPE,
     TOOL_CHOICE_VALUES,
-    Message,
-    ToolChoice,
-    ToolCall,
     Function,
+    Message,
+    ToolCall,
+    ToolChoice,
 )
 
 MULTIMODAL_MODELS = ["gemini-3-flash-preview", "gemini-3-flash-exp", "gemini-2.5-pro"]
@@ -73,12 +132,12 @@ def convert_openai_tools_to_rest(openai_tools: List[dict]) -> List[dict]:
                 "parameters": func.get("parameters", {"type": "object"}),
             }
             function_declarations.append(declaration)
-    return [{
-        "functionDeclarations": function_declarations
-    }]
+    return [{"functionDeclarations": function_declarations}]
 
 
-def parse_gemini_response(response_json: dict, content_text: str = "") -> GeminiResponse:
+def parse_gemini_response(
+    response_json: dict, content_text: str = ""
+) -> GeminiResponse:
     """
     Parse Gemini REST API response to OpenAI-like format.
 
@@ -107,17 +166,15 @@ def parse_gemini_response(response_json: dict, content_text: str = "") -> Gemini
 
                 function = Function(
                     name=fc.get("name", ""),
-                    arguments=json.dumps(args_dict) if args_dict else "{}"
+                    arguments=json.dumps(args_dict) if args_dict else "{}",
                 )
                 tool_call = ToolCall(
-                    id=f"call_{len(calls)}",
-                    type="function",
-                    function=function
+                    id=f"call_{len(calls)}", type="function", function=function
                 )
                 calls.append(tool_call)
             # Check for text content
             elif "text" in part:
-                content_text = part["text"]
+                content_text += part["text"]
 
         if calls:
             tool_calls = calls
@@ -125,7 +182,9 @@ def parse_gemini_response(response_json: dict, content_text: str = "") -> Gemini
     return GeminiResponse(text=content_text, tool_calls=tool_calls)
 
 
-def convert_messages_to_rest(messages: List[dict], supports_images: bool = False) -> tuple:
+def convert_messages_to_rest(
+    messages: List[dict], supports_images: bool = False
+) -> tuple:
     """
     Convert internal messages to Gemini REST API format.
 
@@ -154,12 +213,14 @@ def convert_messages_to_rest(messages: List[dict], supports_images: bool = False
         if role == "user":
             # Handle base64 images (inline data format for REST API)
             if supports_images and msg.get("base64_image"):
-                content["parts"].append({
-                    "inlineData": {
-                        "mimeType": "image/jpeg",
-                        "data": msg["base64_image"]
+                content["parts"].append(
+                    {
+                        "inlineData": {
+                            "mimeType": "image/jpeg",
+                            "data": msg["base64_image"],
+                        }
                     }
-                })
+                )
 
             # Handle text content
             if msg.get("content"):
@@ -199,25 +260,22 @@ def convert_messages_to_rest(messages: List[dict], supports_images: bool = False
                     else:
                         continue
 
-                    content["parts"].append({
-                        "functionCall": {
-                            "name": func_name,
-                            "args": args_dict
-                        }
-                    })
+                    content["parts"].append(
+                        {"functionCall": {"name": func_name, "args": args_dict}}
+                    )
 
         # Handle tool response messages
         elif role == "tool":
             if msg.get("content"):
                 # Tool response goes as user message with functionResponse
-                content["parts"].append({
-                    "functionResponse": {
-                        "name": msg.get("name", "function"),
-                        "response": {
-                            "result": msg["content"]
+                content["parts"].append(
+                    {
+                        "functionResponse": {
+                            "name": msg.get("name", "function"),
+                            "response": {"result": msg["content"]},
                         }
                     }
-                })
+                )
 
         # Only add content if it has parts
         if content["parts"]:
@@ -241,7 +299,9 @@ class LLM:
     def __init__(
         self, config_name: str = "default", llm_config: Optional[LLMSettings] = None
     ):
-        if not hasattr(self, "client_initialized"):  # Only initialize if not already initialized
+        if not hasattr(
+            self, "client_initialized"
+        ):  # Only initialize if not already initialized
             llm_config = llm_config or config.llm
             llm_config = llm_config.get(config_name, llm_config["default"])
             self.model = llm_config.model
@@ -250,53 +310,11 @@ class LLM:
             self.api_key = llm_config.api_key
             self.base_url = llm_config.base_url.rstrip("/")
 
-            # Token tracking
-            self.total_input_tokens = 0
-            self.total_completion_tokens = 0
-            self.max_input_tokens = (
-                llm_config.max_input_tokens
-                if hasattr(llm_config, "max_input_tokens")
-                else None
-            )
-
             self.client_initialized = True
 
-            logger.info(f"Initialized LLM with model: {self.model}, base_url: {self.base_url}")
-
-    def count_tokens(self, text: str) -> int:
-        """
-        Calculate the number of tokens in a text.
-        Note: REST API doesn't provide token counting, so this is a rough estimate.
-        """
-        if not text:
-            return 0
-        # Rough estimate: ~4 characters per token for English text
-        return len(text) // 4
-
-    def update_token_count(self, input_tokens: int, completion_tokens: int = 0) -> None:
-        """Update token counts"""
-        self.total_input_tokens += input_tokens
-        self.total_completion_tokens += completion_tokens
-        logger.info(
-            f"Token usage: Input={input_tokens}, Completion={completion_tokens}, "
-            f"Cumulative Input={self.total_input_tokens}, Cumulative Completion={self.total_completion_tokens}, "
-            f"Total={input_tokens + completion_tokens}, Cumulative Total={self.total_input_tokens + self.total_completion_tokens}"
-        )
-
-    def check_token_limit(self, input_tokens: int) -> bool:
-        """Check if token limits are exceeded"""
-        if self.max_input_tokens is not None:
-            return (self.total_input_tokens + input_tokens) <= self.max_input_tokens
-        return True
-
-    def get_limit_error_message(self, input_tokens: int) -> str:
-        """Generate error message for token limit exceeded"""
-        if (
-            self.max_input_tokens is not None
-            and (self.total_input_tokens + input_tokens) > self.max_input_tokens
-        ):
-            return f"Request may exceed input token limit (Current: {self.total_input_tokens}, Needed: {input_tokens}, Max: {self.max_input_tokens})"
-        return "Token limit exceeded"
+            logger.info(
+                f"Initialized LLM with model: {self.model}, base_url: {self.base_url}"
+            )
 
     @staticmethod
     def format_messages(
@@ -366,7 +384,6 @@ class LLM:
             str: The generated response
 
         Raises:
-            TokenLimitExceeded: If token limits are exceeded
             ValueError: If messages are invalid or response is empty
             Exception: For unexpected errors
         """
@@ -384,28 +401,19 @@ class LLM:
             # Convert to REST API format
             contents, system_text = convert_messages_to_rest(messages, supports_images)
 
-            # Estimate input tokens
-            input_tokens = sum(len(str(c)) // 4 for c in contents)
-            if system_text:
-                input_tokens += len(system_text) // 4
-
-            # Check token limits
-            if not self.check_token_limit(input_tokens):
-                raise TokenLimitExceeded(self.get_limit_error_message(input_tokens))
-
             # Build request body
             body = {"contents": contents}
 
             # Add system instruction if provided
             if system_text:
-                body["systemInstruction"] = {
-                    "parts": [{"text": system_text}]
-                }
+                body["systemInstruction"] = {"parts": [{"text": system_text}]}
 
             # Add generation config
             body["generationConfig"] = {
                 "maxOutputTokens": self.max_tokens,
-                "temperature": temperature if temperature is not None else self.temperature
+                "temperature": temperature
+                if temperature is not None
+                else self.temperature,
             }
 
             # Make POST request to REST API
@@ -418,7 +426,9 @@ class LLM:
             try:
                 response.raise_for_status()
             except requests.HTTPError as e:
-                error_msg = f"REST API error: {e.response.status_code} - {e.response.text}"
+                error_msg = (
+                    f"REST API error: {e.response.status_code} - {e.response.text}"
+                )
                 logger.error(error_msg)
                 raise ValueError(error_msg) from e
 
@@ -430,9 +440,9 @@ class LLM:
             if not result.content:
                 raise ValueError("Empty response from LLM")
 
-            # Update token counts
-            completion_tokens = self.count_tokens(result.content)
-            self.update_token_count(input_tokens, completion_tokens)
+            # Log LLM I/O
+            save_dir = os.getenv("save_dir", ".")
+            log_llm_io(save_dir, messages, result.content, system_msgs, None, "ask")
 
             # Print streaming-like output for compatibility
             if stream:
@@ -441,9 +451,7 @@ class LLM:
 
             return result.content
 
-        except TokenLimitExceeded:
-            raise
-        except Exception as e:
+        except Exception:
             logger.exception("Unexpected error in ask")
             raise
 
@@ -478,7 +486,6 @@ class LLM:
             GeminiResponse: The model's response with .content and .tool_calls attributes
 
         Raises:
-            TokenLimitExceeded: If token limits are exceeded
             ValueError: If tools, tool_choice, or messages are invalid
             Exception: For unexpected errors
         """
@@ -496,25 +503,12 @@ class LLM:
             # Convert to REST API format
             contents, system_text = convert_messages_to_rest(messages, supports_images)
 
-            # Estimate input tokens
-            input_tokens = sum(len(str(c)) // 4 for c in contents)
-            if system_text:
-                input_tokens += len(system_text) // 4
-            if tools:
-                input_tokens += len(str(tools))
-
-            # Check token limits
-            if not self.check_token_limit(input_tokens):
-                raise TokenLimitExceeded(self.get_limit_error_message(input_tokens))
-
             # Build request body
             body = {"contents": contents}
 
             # Add system instruction if provided
             if system_text:
-                body["systemInstruction"] = {
-                    "parts": [{"text": system_text}]
-                }
+                body["systemInstruction"] = {"parts": [{"text": system_text}]}
 
             # Add tools if provided (function calling)
             if tools:
@@ -522,7 +516,9 @@ class LLM:
 
             body["generationConfig"] = {
                 "maxOutputTokens": self.max_tokens,
-                "temperature": temperature if temperature is not None else self.temperature
+                "temperature": temperature
+                if temperature is not None
+                else self.temperature,
             }
 
             # Make POST request to REST API
@@ -534,7 +530,9 @@ class LLM:
             try:
                 response.raise_for_status()
             except requests.HTTPError as e:
-                error_msg = f"REST API error: {e.response.status_code} - {e.response.text}"
+                error_msg = (
+                    f"REST API error: {e.response.status_code} - {e.response.text}"
+                )
                 logger.error(error_msg)
                 raise ValueError(error_msg) from e
 
@@ -546,17 +544,20 @@ class LLM:
             if not result.content and not result.tool_calls:
                 raise ValueError("Empty response from LLM")
 
-            # Update token counts
-            completion_tokens = self.count_tokens(result.content or "")
-            if result.tool_calls:
-                completion_tokens += len(str(result.tool_calls))
-            self.update_token_count(input_tokens, completion_tokens)
+            # Log LLM I/O
+            save_dir = os.getenv("save_dir", ".")
+            log_llm_io(
+                save_dir,
+                messages,
+                result.content or "",
+                system_msgs,
+                result.tool_calls,
+                "ask_tool",
+            )
 
             return result
 
-        except TokenLimitExceeded:
-            raise
-        except Exception as e:
+        except Exception:
             logger.exception("Unexpected error in ask_tool")
             raise
 
@@ -587,7 +588,6 @@ class LLM:
             str: The generated response
 
         Raises:
-            TokenLimitExceeded: If token limits are exceeded
             ValueError: If messages are invalid or response is empty
             Exception: For unexpected errors
         """
@@ -612,8 +612,11 @@ class LLM:
                 if isinstance(image, str):
                     # Assume image path - read and encode as base64
                     import base64
+
                     with open(image, "rb") as f:
-                        formatted_messages[-1]["base64_image"] = base64.b64encode(f.read()).decode("utf-8")
+                        formatted_messages[-1]["base64_image"] = base64.b64encode(
+                            f.read()
+                        ).decode("utf-8")
                 elif isinstance(image, dict):
                     if "url" in image:
                         # Handle image URL (download and encode)
@@ -636,25 +639,16 @@ class LLM:
                 all_messages, supports_images=True
             )
 
-            # Estimate tokens
-            input_tokens = sum(len(str(c)) // 4 for c in contents)
-            if system_text:
-                input_tokens += len(system_text) // 4
-
-            # Check token limits
-            if not self.check_token_limit(input_tokens):
-                raise TokenLimitExceeded(self.get_limit_error_message(input_tokens))
-
             # Build request body
             body = {"contents": contents}
             if system_text:
-                body["systemInstruction"] = {
-                    "parts": [{"text": system_text}]
-                }
+                body["systemInstruction"] = {"parts": [{"text": system_text}]}
 
             body["generationConfig"] = {
                 "maxOutputTokens": self.max_tokens,
-                "temperature": temperature if temperature is not None else self.temperature
+                "temperature": temperature
+                if temperature is not None
+                else self.temperature,
             }
 
             # Make POST request
@@ -667,7 +661,9 @@ class LLM:
             try:
                 response.raise_for_status()
             except requests.HTTPError as e:
-                error_msg = f"REST API error: {e.response.status_code} - {e.response.text}"
+                error_msg = (
+                    f"REST API error: {e.response.status_code} - {e.response.text}"
+                )
                 logger.error(error_msg)
                 raise ValueError(error_msg) from e
 
@@ -679,9 +675,16 @@ class LLM:
             if not result.content:
                 raise ValueError("Empty response from LLM")
 
-            # Update token counts
-            completion_tokens = self.count_tokens(result.content)
-            self.update_token_count(input_tokens, completion_tokens)
+            # Log LLM I/O
+            save_dir = os.getenv("save_dir", ".")
+            log_llm_io(
+                save_dir,
+                all_messages,
+                result.content,
+                system_msgs,
+                None,
+                "ask_with_images",
+            )
 
             if stream:
                 print(result.content, end="", flush=True)
@@ -689,8 +692,6 @@ class LLM:
 
             return result.content
 
-        except TokenLimitExceeded:
-            raise
         except ValueError as ve:
             logger.exception(f"Validation error in ask_with_images: {ve}")
             raise
