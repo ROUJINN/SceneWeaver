@@ -517,7 +517,7 @@ class SceneDesigner:
             else:
                 self.available_tools = self.available_tools2
 
-            breakpoint()
+            # breakpoint()
             logger.info(
                 f"Executing step {self.current_step}/{self.max_steps} for {save_dir}"
             )
