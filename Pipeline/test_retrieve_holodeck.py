@@ -169,7 +169,7 @@ def test_asset_retrieval(retriever):
         return False
 
     # Test categories including ones that often have null mappings
-    test_categories = ["tv", "rug", "plant", "mirror", "lamp", "chair", "bed"]
+    test_categories = ["tv", "rug", "plant", "mirror", "lamp", "chair", "bed", "sofa"]
 
     results = {}
     for category in test_categories:

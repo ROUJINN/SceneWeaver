@@ -8,13 +8,8 @@ from mathutils import Euler, Vector
 
 
 ##add light
-def add_light(size=100, strength=10):
-    obj = bpy.data.objects.get("newroom_0-0.floor")
-    global_bbox = [
-        obj.matrix_world @ mathutils.Vector(corner) for corner in obj.bound_box
-    ]
-    min_x, min_y, min_z = (min(v[i] for v in global_bbox) for i in range(3))
-    max_x, max_y, max_z = (max(v[i] for v in global_bbox) for i in range(3))
+def add_light(bounds, size=100, strength=10):
+    min_x, min_y, min_z, max_x, max_y, max_z = bounds
 
     # Clear existing lights (optional)
     bpy.ops.object.select_by_type(type="LIGHT")
@@ -146,15 +141,9 @@ def make_transparent(name, color=(0.86, 0.83, 0.79, 1)):
     obj.active_material = mat
 
 
-def add_wall(color=(0.6, 0.45, 0.2, 1)):
+def add_wall(bounds, color=(0.6, 0.45, 0.2, 1)):
     # add wall
-    obj = bpy.data.objects.get("newroom_0-0.floor")
-    global_bbox = [
-        obj.matrix_world @ mathutils.Vector(corner) for corner in obj.bound_box
-    ]
-    min_x, min_y, min_z = (min(v[i] for v in global_bbox) for i in range(3))
-    max_x, max_y, max_z = (max(v[i] for v in global_bbox) for i in range(3))
-
+    min_x, min_y, min_z, max_x, max_y, max_z = bounds
     print(f"Global BBox Corners: {[min_x, min_y, min_z]} to {[max_x, max_y, max_z]}")
 
     # Example Usage
@@ -211,13 +200,8 @@ def delete_collections_and_objects_by_name_keywords(keywords):
 
 
 # === 2. 中心移动 ===
-def center_scene():
-    obj = bpy.data.objects.get("newroom_0-0.floor")
-    global_bbox = [
-        obj.matrix_world @ mathutils.Vector(corner) for corner in obj.bound_box
-    ]
-    min_x, min_y, min_z = (min(v[i] for v in global_bbox) for i in range(3))
-    max_x, max_y, max_z = (max(v[i] for v in global_bbox) for i in range(3))
+def center_scene(bounds):
+    min_x, min_y, min_z, max_x, max_y, max_z = bounds
     center = Vector(((max_x + min_x) / 2, (max_y + min_y) / 2, (max_z + min_z) / 2))
 
     mesh_objects = [
@@ -229,21 +213,18 @@ def center_scene():
 
 ## === 3. 创建相机 ===
 def get_scene_bounds():
-    #    obj = bpy.data.objects.get("newroom_0-0.floor")
-    #    global_bbox = [obj.matrix_world @ mathutils.Vector(corner) for corner in obj.bound_box]
-    #    min_x, min_y, min_z = (min(v[i] for v in global_bbox) for i in range(3))
-    #    max_x, max_y, max_z = (max(v[i] for v in global_bbox) for i in range(3))
-    #    min_corner = Vector((min_x,min_y,min_z))
-    #    max_corner = Vector((max_x,max_y,1.5))
+    min_x, min_y, min_z, max_x, max_y, max_z = bounds
+    min_corner = Vector((min_x, min_y, min_z))
+    max_corner = Vector((max_x, max_y, 1.5))
 
-    min_corner = Vector((float("inf"), float("inf"), float("inf")))
-    max_corner = Vector((float("-inf"), float("-inf"), float("-inf")))
-    for obj in bpy.data.objects:
-        if obj.type == "MESH":
-            for corner in obj.bound_box:
-                world_corner = obj.matrix_world @ Vector(corner)
-                min_corner = Vector(map(min, min_corner, world_corner))
-                max_corner = Vector(map(max, max_corner, world_corner))
+    # min_corner = Vector((float("inf"), float("inf"), float("inf")))
+    # max_corner = Vector((float("-inf"), float("-inf"), float("-inf")))
+    # for obj in bpy.data.objects:
+    #     if obj.type == "MESH":
+    #         for corner in obj.bound_box:
+    #             world_corner = obj.matrix_world @ Vector(corner)
+    #             min_corner = Vector(map(min, min_corner, world_corner))
+    #             max_corner = Vector(map(max, max_corner, world_corner))
     return min_corner, max_corner
 
 
@@ -283,9 +264,8 @@ def setup_camera(margin=1.05, resolution=720):
 
 # === 4. 创建旋转轴空对象 ===
 def setup_rotation_anchor():
-    try:
-        anchor = bpy.data.objects.get("RotationAnchor")
-    except:
+    anchor = bpy.data.objects.get("RotationAnchor")
+    if anchor is None:
         anchor = bpy.data.objects.new("RotationAnchor", None)
         bpy.context.collection.objects.link(anchor)
 
@@ -337,6 +317,26 @@ def rotate_scene(anchor, angle):
     bpy.context.view_layer.update()
 
 
+def get_room_bounds():
+    """Get bounds of newroom_0-0 before any deletions"""
+    print("--- 查找相关物体 ---")
+    for obj in bpy.data.objects:
+        if "newroom" in obj.name:
+            print(f"'{obj.name}'")
+
+    obj = bpy.data.objects.get("newroom_0-0")
+    if obj is None:
+        raise Exception("Object 'newroom_0-0' not found!")
+
+    global_bbox = [
+        obj.matrix_world @ mathutils.Vector(corner) for corner in obj.bound_box
+    ]
+    min_x, min_y, min_z = (min(v[i] for v in global_bbox) for i in range(3))
+    max_x, max_y, max_z = (max(v[i] for v in global_bbox) for i in range(3))
+
+    return (min_x, min_y, min_z, max_x, max_y, max_z)
+
+
 if __name__ == "__main__":
     import sys
 
@@ -355,20 +355,23 @@ if __name__ == "__main__":
     # if os.path.exists(blendfile):
     #     bpy.ops.wm.open_mainfile(filepath=blendfile, load_ui=False, use_scripts=False)
 
+    # Get room bounds BEFORE deletion
+    bounds = get_room_bounds()
+
     delete_collections_and_objects_by_name_keywords(
         ["wall", "window", "placeholder", "bbox", "ceiling"]
     )
-    add_light(strength=20)
-    add_wall()
-    center_scene()
+    add_light(bounds, strength=20)
+    add_wall(bounds)
+    center_scene(bounds)
     setup_camera(resolution=1024)
     anchor = setup_rotation_anchor()
-    bpy.context.scene.render.engine = "CYCLES"  #'CYCLES' #'BLENDER_EEVEE_NEXT'
+    bpy.context.scene.render.engine = "BLENDER_EEVEE"  #'CYCLES' #'BLENDER_EEVEE_NEXT'
     # print("Current render engine:", bpy.context.scene.render.engine)
     render_views(
         anchor, angles_deg=range(0, 360, 90), output_dir=roomdir, render_type="cycle"
     )
-    # rotate_scene(anchor, angle=270)
+    rotate_scene(anchor, angle=270)
 
     # ~/software/blender-4.2.0-linux-x64$ ./blender --background --python ~/workspace/SceneWeaver/render/render_scene.py
     # ~/software/blender-4.2.0-linux-x64/blender /mnt/fillipo/yandan/scenesage/record_scene/holodeck//waitingroom/waitingroom_0/record_files/scene_0.blend --background --python ~/workspace/SceneWeaver/render/render_scene.py

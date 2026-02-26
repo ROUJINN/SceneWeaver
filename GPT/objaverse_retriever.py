@@ -75,15 +75,16 @@ class ObjathorRetriever:
         missing_count = 0
         for idx, uid in enumerate(all_uids):
             # THOR assets don't need file checking
-            if uid in thor_uids:
+            # 但这里底层用的不是unity，不行
+            # if uid in thor_uids:
+            #     valid_indices.append(idx)
+            # else:
+            # Check if Objaverse asset file exists
+            asset_path = os.path.join(OBJATHOR_ASSETS_DIR, uid, f"{uid}.pkl.gz")
+            if os.path.exists(asset_path):
                 valid_indices.append(idx)
             else:
-                # Check if Objaverse asset file exists
-                asset_path = os.path.join(OBJATHOR_ASSETS_DIR, uid, f"{uid}.pkl.gz")
-                if os.path.exists(asset_path):
-                    valid_indices.append(idx)
-                else:
-                    missing_count += 1
+                missing_count += 1
 
         if missing_count > 0:
             print(f"[INFO] 过滤掉 {missing_count} 个缺失的资产文件")
@@ -139,6 +140,7 @@ class ObjathorRetriever:
             unsorted_results.append((self.asset_ids[asset_index], score))
 
         # Sorting the results in descending order by score
+        # breakpoint()
         results = sorted(unsorted_results, key=lambda x: x[1], reverse=True)
 
         return results

@@ -27,5 +27,6 @@ To solve the problem, list all the appropriate tools that can match the requirem
 You must choose one tool for this step.
 Clearly explain the expectation and suggest the next steps.
 If there is no big problem to address, or if only slight improvements can be made, or if further changes could worsen the scene, stop making modifications.
+Do not write python code, you should use the tool with function calling.
 
 """

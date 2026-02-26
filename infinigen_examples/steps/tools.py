@@ -394,6 +394,7 @@ def render_scene(
     get_coord(solver)
 
     # Set resolution
+    bpy.context.scene.render.engine = "BLENDER_EEVEE"
     bpy.context.scene.render.resolution_x = 1920
     bpy.context.scene.render.resolution_y = 1080
     # Use a file format that supports transparency

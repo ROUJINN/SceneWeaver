@@ -430,10 +430,6 @@ class Solver:
 
     def retrieve_objav_assets(self, category_cnt, name_mapping=None):
         save_dir = os.getenv("save_dir")
-        # if os.path.exists(f"{save_dir}/objav_files.json"):
-        #     with open(f"{save_dir}/objav_files.json", "r") as f:
-        #         self.LoadObjavFiles = json.load(f)
-        #     return
 
         def get_case_insensitive(dictionary, key):
             return next(
@@ -451,6 +447,7 @@ class Solver:
         with open(f"{save_dir}/objav_cnts.json", "w") as f:
             json.dump(self.LoadObjavCnts, f, indent=4)
 
+        # breakpoint()
         os.system(
             f'bash -lic "source ./run/retrieve_holodeck.sh {save_dir}" > run.log 2>&1'
         )

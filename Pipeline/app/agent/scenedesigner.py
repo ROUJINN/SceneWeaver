@@ -306,7 +306,6 @@ class SceneDesigner:
 
         content = response.content if response and response.content else ""
 
-        # Log response info
         logger.info(f"✨ {self.name}'s thoughts: {content}")
         logger.info(
             f"🛠️ {self.name} selected {len(tool_calls) if tool_calls else 0} tools to use"

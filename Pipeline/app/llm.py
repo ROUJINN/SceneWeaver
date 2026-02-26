@@ -148,6 +148,7 @@ def parse_gemini_response(
     Returns:
         GeminiResponse object with content and tool_calls
     """
+    breakpoint()  # 保留这个可以在所有的llm调用之后停下来
     tool_calls = None
 
     # Extract candidates

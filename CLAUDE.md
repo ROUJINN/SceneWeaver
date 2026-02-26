@@ -7,15 +7,6 @@
 来activate虚拟环境，并且顺便设置好环境变量。
 如果要单独的开一个bash来跑程序，那么就要在bash的开头先 `source /home/lj/mylogin.sh <conda_env_name>`
 
-## Project Overview
-
-SceneWeaver is an "All-in-One 3D Scene Synthesis with an Extensible and Self-Reflective Agent" - a system for generating complex 3D indoor scenes using AI agents. It combines:
-- An AI-powered SceneDesigner agent that uses LLMs for planning and decision-making
-- Infinigen as the procedural 3D content generation engine (based on Blender)
-- Multiple asset sources: MetaScenes, 3D FUTURE, Infinigen-generated assets, Objaverse
-- A tool-based architecture for scene initialization, implementation, and modification
-
-
 ## Running the System
 
 ### Background Blender (Recommended)

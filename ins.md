@@ -1,5 +1,10 @@
 目前的 log_llm_io 函数会把调用LLM时的system message记录两次
 
+跑代码时，产生的log在 run.log 和 fxxkingresults/Design_me_a_bedroom_0/run_inf.log
+ 
+/home/lj/3D/SceneWeaver/infinigen/core/constraints/example_solver/solve.py 这里产生log
+Pipeline/logs 这里甚至还有log，记录的是终端的
+ 
 
 最终图片的渲染的方法：
 
