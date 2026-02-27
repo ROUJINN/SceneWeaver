@@ -9,7 +9,6 @@
 
 ## Running the System
 
-### Background Blender (Recommended)
 ```bash
 cd Pipeline
 source run.sh

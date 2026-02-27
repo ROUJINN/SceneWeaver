@@ -5,6 +5,19 @@
 /home/lj/3D/SceneWeaver/infinigen/core/constraints/example_solver/solve.py 这里产生log
 Pipeline/logs 这里甚至还有log，记录的是终端的
  
+地板材质在
+/home/lj/3D/SceneWeaver/infinigen/core/constraints/example_solver/room/decorate.py
+这些材质来自以下模块：
+- `infinigen.assets.materials.rug`
+- `infinigen.assets.materials.tile`
+- `infinigen.assets.materials.tiles.advanced_tiles`
+- `infinigen.assets.materials.woods.tiled_wood`
+根据代码分析，这些地板材质不使用任何外部图片文件。它们都是程序化生成的，使用 Blender 的内置程序化纹理节点：
+`rug.py` – 使用 `VoronoiTexture` 和 `NoiseTexture` 程序化生成纹理  
+`tile.py` – 使用 `BrickTexture` 程序化生成瓷砖纹理  
+`advanced_tiles.py` – 使用各种程序化纹理节点组  
+`tiled_wood.py` – 使用 `MusgraveTexture` 和 `NoiseTexture` 程序化生成木纹  
+这些材质在运行时通过 Blender 的着色器节点实时生成，不需要预先准备任何图片文件。
 
 最终图片的渲染的方法：
 

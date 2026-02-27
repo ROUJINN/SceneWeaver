@@ -201,12 +201,13 @@ def find_given_assignments(
         )
         return
 
-    # if isinstance(rel, cl.AnyRelation):  # 检查是否有未指定的关系
-    #     pprint(relations)
-    #     pprint([(rel, dom)] + remaining_relations)
-    #     raise ValueError(
-    #         f"Got {rel} as first relation. Invalid! Maybe the program is underspecified?"
-    #     )
+    # AnyRelation doesn't have parent_tags/child_tags, skip it
+    if isinstance(rel, cl.AnyRelation):
+        logger.debug(f"Got AnyRelation, skipping it")
+        yield from find_assignments(
+            curr, relations=remaining_relations, assignments=assignments
+        )
+        return
     # 获取符合约束域的对象候选列表
     candidates = objkeys_in_dom(dom, curr)
     random.shuffle(candidates)
@@ -286,6 +287,14 @@ def find_given_assignments_fast(
             f"Found remaining_relations implies {(rel, dom)=}, skipping it"
         )  # 调试信息
         yield from find_assignments(  # 跳过当前关系，继续处理剩余关系
+            curr, relations=remaining_relations, assignments=assignments
+        )
+        return
+
+    # AnyRelation doesn't have parent_tags/child_tags, skip it
+    if isinstance(rel, cl.AnyRelation):
+        logger.debug(f"Got AnyRelation, skipping it")
+        yield from find_assignments(
             curr, relations=remaining_relations, assignments=assignments
         )
         return
