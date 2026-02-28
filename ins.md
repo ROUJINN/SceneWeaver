@@ -60,3 +60,97 @@ Pipeline/logs 这里甚至还有log，记录的是终端的
 
   渲染是在 coarse 任务下，每次迭代后会自动调用 record_scene() 保存当前场景状态的可视化图片。
 
+
+这是一个连锁错误的序列：
+
+1. **工具可用性逻辑问题** (scenedesigner.py:512-517):
+   - `max_steps = 15`
+   - Step 0: `available_tools0` (只有 InitGPTExecute)
+   - Steps 1-13: `available_tools1` (包括 AddGPT, UpdateLayout, Terminate 等)
+   - Step 14: `available_tools2` (只有 Terminate)
+
+2. **LLM 选择了不存在的工具**:
+   - 在 step 14 时，`available_tools` 被设置为 `available_tools2 = ToolCollection(Terminate())`
+   - 但 LLM 仍然选择了 `add_gpt` 工具（可能是 LLM 没有正确理解当前可用的工具）
+
+3. **工具执行失败** (scenedesigner.py:402-403):
+   - `execute_tool()` 检测到 `add_gpt` 不在 `available_tools.tool_map` 中
+   - 返回 `Error: Unknown tool 'add_gpt'`
+
+4. **评估逻辑错误** (scenedesigner.py:160-164):
+   ```python
+   if (
+       self.current_step == self.max_steps - 1
+       or self.tool_calls[0].function.name == "terminate"
+   ):  # evaluate final step
+       eval_results = self.eval(iter=self.current_step)
+   ```
+   - 即使工具执行失败，`self.current_step == self.max_steps - 1` (14 == 14) 仍然为 True
+   - 调用 `eval(iter=self.current_step)`，进而调用 `eval_scene(iter=14, user_demand)`
+
+5. **FileNotFoundError** (evaluation.py:104):
+   - `eval_general_score()` 尝试读取 `layout_14.json`
+   - 该文件不存在，因为工具执行失败，没有生成新的场景
+
+
+老是会
+infinigen success
+2026-02-28 09:37:02.930 | INFO     | app.agent.scenedesigner:act:380 - 🎯 Tool 'update_size' completed its mission! Result: Observed output of cmd `update_size` executed:
+Successfully Modify sizes with GPT.
+> /home/lj/3D/SceneWeaver/Pipeline/app/agent/scenedesigner.py(520)run()
+-> logger.info(
+(Pdb) c
+2026-02-28 09:39:01.302 | INFO     | app.agent.scenedesigner:run:520 - Executing step 5/15 for /home/lj/3D/SceneWeaver/fxxkingresults/A_bathroom_with_a_bathtub__a_v_0
+2026-02-28 09:39:15.960 | INFO     | app.llm:log_llm_io:70 - LLM I/O logged to: /home/lj/3D/SceneWeaver/fxxkingresults/A_bathroom_with_a_bathtub__a_v_0/llm_io_logs/llm_20260228_093915_952749.json
+```json
+{
+  "realism": {
+    "grade": 6,
+    "comment": "The objects are appropriate for a bathroom, but the absence of a sink/vanity makes the room feel logically incomplete for a living space."
+  },
+  "functionality": {
+    "grade": 4,
+    "comment": "The user requested a vanity and soap dispenser, both of which are missing. A bathroom without a sink is not fully functional."
+  },
+  "layout": {
+    "grade": 5,
+    "comment": "The rug significantly overlaps with the bathtub's bounding area. Additionally, the bottom half of the room is completely empty, creating an unbalanced layout."
+  },
+  "completion": {
+    "grade": 4,
+    "comment": "While the shelf is well-detailed with small items, more than 40% of the room is empty floor space. Several requested items are missing."
+  }
+}
+```
+--------------------------------------------------
+2026-02-28 09:39:15.965 | INFO     | app.agent.scenedesigner:eval:215 - 🎯 Evaluation Results: 'The evaluated reults of the current scene is :
+{Object Difference: {
+{    newly added objects: [],
+    removed objects: [4656364_JarFactory, 5484490_BottleFactory, 5124649_BottleFactory, 8027902_BowlFactory, 8478208_SingleCabinetFactory, 4510050_JarFactory]}
+},
+GPT score (0-10, higher is better): {
+{    realism: {
+{        grade: 6,
+        comment: 'The objects are appropriate for a bathroom, but the absence of a sink/vanity makes the room feel logically incomplete for a living space.'}
+    },
+    functionality: {
+{        grade: 4,
+        comment: 'The user requested a vanity and soap dispenser, both of which are missing. A bathroom without a sink is not fully functional.'}
+    },
+    layout: {
+{        grade: 5,
+        comment: "The rug significantly overlaps with the bathtub's bounding area. Additionally, the bottom half of the room is completely empty, creating an unbalanced layout."}
+    },
+    completion: {
+{        grade: 4,
+        comment: 'While the shelf is well-detailed with small items, more than 40% of the room is empty floor space. Several requested items are missing.'}
+    }}
+},
+Physics score: {
+{    object number (higher is better): 'Unknown',
+    object not inside the room (lower is better): 0,
+    object has collision (lower is better): 0}
+}}'
+cp: cannot stat '/home/lj/3D/SceneWeaver/fxxkingresults/A_bathroom_with_a_bathtub__a_v_0/record_files/metric_4.json': No such file or directory
+
+也不知道咋搞

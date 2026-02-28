@@ -76,6 +76,7 @@ class SceneDesigner:
     current_step: int = 0
     memory = Memory()
     state = AgentState.IDLE
+    retry_counts: dict = {}  # Track retry count per step
     # @model_validator(mode="after")
     # def initialize_agent(self) :
     #     """Initialize agent with default settings if not provided."""
@@ -103,6 +104,19 @@ class SceneDesigner:
             if not isvalid:
                 save_dir = os.getenv("save_dir")
                 iter = self.current_step - 1
+
+                # Check retry limit
+                retry_key = f"step_{iter}"
+                retry_count = self.retry_counts.get(retry_key, 0)
+                if retry_count >= 2:
+                    logger.warning(
+                        f"⚠️ Step {iter} has failed {retry_count} times. Skipping retry and continuing..."
+                    )
+                    return "Retry limit reached, continuing"
+
+                self.retry_counts[retry_key] = retry_count + 1
+                logger.info(f"🔄 Retrying step {iter} (attempt {retry_count + 1}/2)")
+
                 try:
                     os.system(
                         f"cp {save_dir}/record_scene/render_{iter}_marked.jpg {save_dir}/record_scene/render_{iter}_marked_failed.jpg"
@@ -111,7 +125,7 @@ class SceneDesigner:
                         f"cp {save_dir}/record_scene/render_{iter}.jpg {save_dir}/record_scene/render_{iter}_failed.jpg"
                     )
                     os.system(
-                        f"cp {save_dir}/record_files/metric_{iter}.json {save_dir}/record_files/metric_{iter}_failed.json"
+                        f"cp {save_dir}/pipeline/metric_{iter}.json {save_dir}/pipeline/metric_{iter}_failed.json"
                     )
                     os.system(
                         f"cp {save_dir}/record_files/scene_{iter}.blend {save_dir}/record_files/scene_{iter}_failed.blend"
@@ -136,9 +150,6 @@ class SceneDesigner:
                     )
                     os.system(
                         f"cp {save_dir}/record_files/terrain_{iter}.pkl {save_dir}/record_files/terrain_{iter}_failed.pkl"
-                    )
-                    os.system(
-                        f"cp {save_dir}/pipeline/metric_{iter}.json {save_dir}/pipeline/metric_{iter}_failed.json"
                     )
                 except:
                     pass
@@ -180,8 +191,12 @@ class SceneDesigner:
 
         if iter == 0:
             if score_new >= 8:
+                logger.info(f"✅ Step {iter} passed validation: score {score_new} >= 8")
                 return True
             else:
+                logger.warning(
+                    f"❌ Step {iter} failed validation: score {score_new} < 8 (threshold)"
+                )
                 return False
         else:
             json_name = f"{save_dir}/pipeline/metric_{iter - 1}.json"
@@ -193,9 +208,17 @@ class SceneDesigner:
                 ]
                 score_old = sum(score_old)
 
-            if score_old - score_new >= 5:
+            score_diff = score_old - score_new
+            if score_diff >= 5:
+                logger.warning(
+                    f"❌ Step {iter} failed validation: score dropped from {score_old} to {score_new} "
+                    f"(diff={score_diff} >= 5 threshold). Will retry this step."
+                )
                 return False
             else:
+                logger.info(
+                    f"✅ Step {iter} passed validation: score {score_old} → {score_new} (diff={score_diff})"
+                )
                 return True
 
     def eval(self, iter):
@@ -516,7 +539,7 @@ class SceneDesigner:
             else:
                 self.available_tools = self.available_tools2
 
-            # breakpoint()
+            breakpoint()  # 保留这个是在每一步前停下来
             logger.info(
                 f"Executing step {self.current_step}/{self.max_steps} for {save_dir}"
             )
@@ -524,6 +547,9 @@ class SceneDesigner:
             if step_result == "Failed":
                 self.current_step -= 1
                 continue
+            elif step_result == "Retry limit reached, continuing":
+                logger.info("⏭️ Continuing to next step despite validation failure")
+                # Don't retry, just continue to next step
 
             # Check for stuck state
             if self.is_stuck():

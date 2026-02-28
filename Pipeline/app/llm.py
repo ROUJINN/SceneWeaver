@@ -148,7 +148,7 @@ def parse_gemini_response(
     Returns:
         GeminiResponse object with content and tool_calls
     """
-    breakpoint()  # 保留这个可以在所有的llm调用之后停下来
+    # breakpoint()  # 保留这个可以在所有的llm调用之后停下来
     tool_calls = None
 
     # Extract candidates
@@ -513,6 +513,7 @@ class LLM:
                 body["systemInstruction"] = {"parts": [{"text": system_text}]}
 
             # Add tools if provided (function calling)
+            # breakpoint()
             if tools:
                 body["tools"] = convert_openai_tools_to_rest(tools)
 
