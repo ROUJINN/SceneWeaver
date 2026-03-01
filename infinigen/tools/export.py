@@ -219,7 +219,7 @@ def delete_collection(collection_name):
 
 
 def delete_objects():
-    
+
     logging.info("Deleting placeholders collection")
     collection_name = "placeholders"
     delete_collection(collection_name)
@@ -235,12 +235,13 @@ def delete_objects():
     # 删除散射水果对象及其关联数据
     for obj in [o for o in bpy.data.objects if o.name.startswith("scatter_fruit")]:
         # 清理对象数据
-        if hasattr(obj, 'data') and obj.data:
+        if hasattr(obj, "data") and obj.data:
             if obj.data.users == 1:  # 确保没有其他用户引用
                 bpy.data.meshes.remove(obj.data)
         # 删除对象
         bpy.data.objects.remove(obj, do_unlink=True)
-        
+
+
 def rename_all_meshes(obj=None):
     if obj is not None:
         if obj.data and obj.data.users == 1:
@@ -815,7 +816,7 @@ def export_single_obj(
 
     collection_views, obj_views = update_visibility()
 
-    bpy.context.scene.render.engine = "CYCLES"
+    bpy.context.scene.render.engine = "BLENDER_EEVEE"
     bpy.context.scene.cycles.device = "GPU"
     bpy.context.scene.cycles.samples = 1  # choose render sample
     # Set the tile size
@@ -934,7 +935,7 @@ def export_curr_scene(
             apply_all_modifiers(obj)
 
     # 配置渲染设置
-    bpy.context.scene.render.engine = "CYCLES"
+    bpy.context.scene.render.engine = "BLENDER_EEVEE"
     bpy.context.scene.cycles.device = "GPU"
     bpy.context.scene.cycles.samples = 1  # choose render sample
     # Set the tile size

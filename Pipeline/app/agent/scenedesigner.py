@@ -539,7 +539,7 @@ class SceneDesigner:
             else:
                 self.available_tools = self.available_tools2
 
-            breakpoint()  # 保留这个是在每一步前停下来
+            # breakpoint()  # 保留这个是在每一步前停下来
             logger.info(
                 f"Executing step {self.current_step}/{self.max_steps} for {save_dir}"
             )

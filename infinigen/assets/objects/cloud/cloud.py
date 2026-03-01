@@ -537,7 +537,7 @@ def create_cube(name, steps=128, collection="Clouds"):
 
 
 def initialize(collection):
-    bpy.context.scene.render.engine = "CYCLES"
+    bpy.context.scene.render.engine = "BLENDER_EEVEE"
     bpy.context.scene.cycles.device = "GPU"
 
     bpy.context.scene.cycles.preview_samples = 32
@@ -631,7 +631,7 @@ def single():
     remove_collection(collection_name)
     create_collection(collection_name)
 
-    bpy.context.scene.render.engine = "CYCLES"
+    bpy.context.scene.render.engine = "BLENDER_EEVEE"
     bpy.context.scene.cycles.device = "GPU"
 
     bpy.context.scene.cycles.preview_samples = 32

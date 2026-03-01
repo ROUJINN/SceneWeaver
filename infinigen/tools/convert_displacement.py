@@ -55,7 +55,7 @@ def copy_nodes(shader_node_tree, geo_node_tree):  # WIP, unused
 
 
 def bake_vertex_colors(obj):
-    bpy.context.scene.render.engine = "CYCLES"
+    bpy.context.scene.render.engine = "BLENDER_EEVEE"
     bpy.context.scene.cycles.device = "GPU"
     bpy.context.scene.cycles.samples = 1
     obj.select_set(True)

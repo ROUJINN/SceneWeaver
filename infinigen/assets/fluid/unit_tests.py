@@ -38,7 +38,7 @@ def test_all_fluid_domains_have_density():
 
 def test_depth_not_infinite_all_pixels():
     scene = bpy.context.scene
-    scene.render.engine = "CYCLES"
+    scene.render.engine = "BLENDER_EEVEE"
     scene.cycles.samples = 10
 
     scene.use_nodes = True
@@ -70,7 +70,7 @@ def test_depth_not_infinite_all_pixels():
 def test_depth_infinity_portion():
     eps = 0.01
     scene = bpy.context.scene
-    scene.render.engine = "CYCLES"
+    scene.render.engine = "BLENDER_EEVEE"
     scene.cycles.samples = 10
 
     scene.use_nodes = True

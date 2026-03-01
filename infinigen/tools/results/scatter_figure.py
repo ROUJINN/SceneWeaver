@@ -120,7 +120,7 @@ def apply_scatters(obj, mode, index):
 
     bpy.context.scene.render.film_transparent = True
     bpy.context.scene.render.image_settings.color_mode = "RGBA"
-    # bpy.context.scene.render.engine = 'CYCLES'
+    # bpy.context.scene.render.engine = 'BLENDER_EEVEE'
     bpy.context.scene.render.filepath = path
     bpy.ops.render.render(scene=bpy.context.scene.name, write_still=True)
     # butil.delete(all_objects)

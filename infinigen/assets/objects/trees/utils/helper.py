@@ -47,7 +47,7 @@ def config_rendering(
         C.scene.eevee.taa_render_samples = render_samples
 
     elif renderer == "cycles":
-        C.scene.render.engine = "CYCLES"
+        C.scene.render.engine = "BLENDER_EEVEE"
         # C.scene.cycles.device = 'GPU'
         C.scene.cycles.samples = render_samples
         C.scene.cycles.use_denoising = True

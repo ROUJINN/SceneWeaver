@@ -26,7 +26,7 @@ from infinigen.core.util.organization import Task
 
 logger = logging.getLogger(__name__)
 
-CYCLES_GPUTYPES_PREFERENCE = [
+BLENDER_EEVEE_GPUTYPES_PREFERENCE = [
     # key must be a valid cycles device_type
     # ordering indicate preference - earlier device types will be used over later if both are available
     #  - e.g most OPTIX gpus will also show up as a CUDA gpu, but we will prefer to use OPTIX due to this list's ordering
@@ -217,7 +217,7 @@ def configure_render_cycles(
     exposure,
     denoise,
 ):
-    bpy.context.scene.render.engine = "CYCLES"
+    bpy.context.scene.render.engine = "BLENDER_EEVEE"
 
     # For now, denoiser is always turned on, but the  _used_
     bpy.context.scene.cycles.use_denoising = denoise
@@ -247,7 +247,7 @@ def configure_cycles_devices(use_gpu=True):
         bpy.context.scene.cycles.device = "CPU"
         return
 
-    assert bpy.context.scene.render.engine == "CYCLES"
+    assert bpy.context.scene.render.engine == "BLENDER_EEVEE"
     bpy.context.scene.cycles.device = "GPU"
     prefs = bpy.context.preferences.addons["cycles"].preferences
 
@@ -259,7 +259,7 @@ def configure_cycles_devices(use_gpu=True):
 
     types = list(d.type for d in prefs.devices)
 
-    types = sorted(types, key=CYCLES_GPUTYPES_PREFERENCE.index)
+    types = sorted(types, key=BLENDER_EEVEE_GPUTYPES_PREFERENCE.index)
     logger.info(f"Available devices have {types=}")
     use_device_type = types[0]
 
@@ -285,14 +285,14 @@ def configure_cycles_devices(use_gpu=True):
 
 @gin.configurable
 def configure_blender(
-    render_engine="CYCLES",
+    render_engine="BLENDER_EEVEE",
     motion_blur=False,
     motion_blur_shutter=0.5,
 ):
     bpy.context.preferences.system.scrollback = 0
     bpy.context.preferences.edit.undo_steps = 0
 
-    if render_engine == "CYCLES":
+    if render_engine == "BLENDER_EEVEE":
         configure_render_cycles()
         configure_cycles_devices()
     else:

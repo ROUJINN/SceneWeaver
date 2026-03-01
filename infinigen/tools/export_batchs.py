@@ -219,7 +219,7 @@ def delete_collection(collection_name):
 
 
 def delete_objects():
-    
+
     logging.info("Deleting placeholders collection")
     collection_name = "placeholders"
     delete_collection(collection_name)
@@ -235,11 +235,12 @@ def delete_objects():
     # 删除散射水果对象及其关联数据
     for obj in [o for o in bpy.data.objects if o.name.startswith("scatter_fruit")]:
         # 清理对象数据
-        if hasattr(obj, 'data') and obj.data:
+        if hasattr(obj, "data") and obj.data:
             if obj.data.users == 1:  # 确保没有其他用户引用
                 bpy.data.meshes.remove(obj.data)
         # 删除对象
         bpy.data.objects.remove(obj, do_unlink=True)
+
 
 def rename_all_meshes(obj=None):
     if obj is not None:
@@ -279,7 +280,6 @@ def uv_unwrap(obj):
 
     obj.data.uv_layers.new(name="ExportUV")
     bpy.context.object.data.uv_layers["ExportUV"].active = True
-
 
     logging.info("UV Unwrapping")
     bpy.ops.object.mode_set(mode="EDIT")
@@ -816,7 +816,7 @@ def export_single_obj(
 
     collection_views, obj_views = update_visibility()
 
-    bpy.context.scene.render.engine = "CYCLES"
+    bpy.context.scene.render.engine = "BLENDER_EEVEE"
     bpy.context.scene.cycles.device = "GPU"
     bpy.context.scene.cycles.samples = 1  # choose render sample
     # Set the tile size
@@ -935,7 +935,7 @@ def export_curr_scene(
             apply_all_modifiers(obj)
 
     # 配置渲染设置
-    bpy.context.scene.render.engine = "CYCLES"
+    bpy.context.scene.render.engine = "BLENDER_EEVEE"
     bpy.context.scene.cycles.device = "GPU"
     bpy.context.scene.cycles.samples = 1  # choose render sample
     # Set the tile size
@@ -1077,12 +1077,14 @@ def make_args():
     parser.add_argument("--input_folder", type=Path, default="")
     parser.add_argument("--output_folder", type=Path, default="")
 
-    parser.add_argument("-f", "--format", type=str, default="usdc",choices=FORMAT_CHOICES)
+    parser.add_argument(
+        "-f", "--format", type=str, default="usdc", choices=FORMAT_CHOICES
+    )
 
     parser.add_argument("-v", "--vertex_colors", action="store_true")
     parser.add_argument("-r", "--resolution", default=1024, type=int)
     parser.add_argument("-i", "--individual", action="store_true")
-    parser.add_argument("-o", "--omniverse", default=True,type=bool)
+    parser.add_argument("-o", "--omniverse", default=True, type=bool)
 
     args = parser.parse_args()
 
@@ -1100,6 +1102,7 @@ def make_args():
 
 if __name__ == "__main__":
     import os
+
     args = make_args()
     # basedir = "/mnt/fillipo/yandan/scenesage/record_scene/"
     # #["atiss","diffuscene","holodeck","idesign","layoutgpt","physcene"]
@@ -1118,17 +1121,19 @@ if __name__ == "__main__":
     #                 os.system(f"rm -r {d}")
 
     basedir = "/mnt/fillipo/yandan/scenesage/record_scene/"
-    #["atiss","diffuscene","holodeck","idesign","layoutgpt","physcene"]
+    # ["atiss","diffuscene","holodeck","idesign","layoutgpt","physcene"]
     for method in ["manus"]:
         for roomtype in ["0_livingroom"]:
-            typefolder = basedir + method +"/" + roomtype
-            os.makedirs(basedir + method +"_usd/" + roomtype, exist_ok=True)
+            typefolder = basedir + method + "/" + roomtype
+            os.makedirs(basedir + method + "_usd/" + roomtype, exist_ok=True)
             for scene in os.listdir(typefolder):
                 args.input_folder = Path(typefolder + "/" + scene + "/record_files")
-                args.output_folder = Path(basedir + method +"_usd/" + roomtype + "/" + scene)
+                args.output_folder = Path(
+                    basedir + method + "_usd/" + roomtype + "/" + scene
+                )
                 print(f"Exporting scene into {args.output_folder}")
                 try:
                     main(args)
                 except:
-                    d = basedir + method +"_usd/" + roomtype + "/" + scene
+                    d = basedir + method + "_usd/" + roomtype + "/" + scene
                     os.system(f"rm -r {d}")
